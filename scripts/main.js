@@ -1,17 +1,23 @@
 /* **************************************************************************
 MODEL
 *************************************************************************** */
-(function makeModel (window) {
-  function stringModule () {
-    let string = ''
 
-    function get () {
-      return string
-    }
-    function set (str) {
-      string = String(str)
-    }
-    return {get: get, set: set}
+(function makeModel (window) {
+  window.calcMVC = window.calcMVC || {}
+
+  window.calcMVC.model = {
+    input: inputModule(),
+    total: totalModule(),
+    forkTotal: totalModule(),
+    forkPath: forkPathModule(),
+    mainPath: mainPathModule(),
+    currentOperator: operatorModule(),
+    evaluateMainPath: evaluateMainPath,
+    evaluateForkPath: evaluateForkPath,
+    evaluateEquals: evaluateEquals,
+    softClear: softClear,
+    hardClear: hardClear,
+    round: round
   }
 
   function totalModule () {
@@ -26,116 +32,155 @@ MODEL
     return {get: get, set: set}
   }
 
-  function pathModule () {
-    let path = a => Number(a)
+  function inputModule () {
+    let input = ''
+
+    function get () {
+      return input
+    }
+    function addCharEnd (char) {
+      input += char
+    }
+    function changeSign () {
+      input.indexOf('-') === -1 ? input = '-' + input : input = input.substring(1)
+    }
+    function trimLeadingZeros () {
+      if (input.indexOf('0') === 0 && input.length > 1)
+        input = input.substring(1)
+    }
+    function limitDecimalPoints () {
+      if (input.indexOf('.') !== -1 && input.indexOf('.') !== input.length - 1)
+        input = input.substring(0, input.length - 1)
+    }
+    function reset () {
+      input = ''
+    }
+    return {
+      get: get,
+      addCharEnd: addCharEnd,
+      changeSign: changeSign,
+      trimLeadingZeros: trimLeadingZeros,
+      limitDecimalPoints: limitDecimalPoints,
+      reset: reset
+    }
+  }
+
+  function operatorModule () {
+    let operator = ''
+
+    function get () {
+      return operator
+    }
+    function reset () {
+      operator = ''
+    }
+    function add () {
+      operator = 'add'
+    }
+    function subtract () {
+      operator = 'subtract'
+    }
+    function multiply () {
+      operator = 'multiply'
+    }
+    function divide () {
+      operator = 'divide'
+    }
+    return {
+      get: get,
+      reset: reset,
+      add: add,
+      subtract: subtract,
+      multiply: multiply,
+      divide: divide
+    }
+  }
+
+  function mainPathModule () {
+    let path = a => round(Number(a))
 
     function get () {
       return path
     }
-    function set (exprsn) {
-      path = exprsn
+    function reset () {
+      path = a => round(Number(a))
     }
-    return {get: get, set: set}
-  }
-
-  function inputModule () {
-    let obj = stringModule()
-
-    obj.addCharEnd = function (char) {
-      this.set(this.get() + char)
-    }
-    obj.changeSign = function () {
-      this.get().indexOf('-') === -1 ? this.set('-' + this.get()) : this.set(this.get().substring(1))
-    }
-    obj.trimLeadingZeros = function () {
-      if (this.get().indexOf('0') === 0 && this.get().length > 1)
-        this.set(this.get().substring(1))
-    }
-    obj.limitDecimalPoints = function () {
-      if (this.get().indexOf('.') !== -1 && this.get().indexOf('.') !== this.get().length - 1)
-        this.set(this.get().substring(0, this.get().length - 1))
-    }
-    return obj
-  }
-
-  function mainPathModule () {
-    let obj = pathModule()
-
-    obj.add = function (a) {
-      return function (b) {
-        return (a + b).toPrecision(10)
+    function add (a) {
+      path = function (b) {
+        return round(round(Number(a)) + round(Number(b)))
       }
     }
-    obj.subtract = function (a) {
-      return function (b) {
-        return (a - b).toPrecision(10)
+    function subtract (a) {
+      path = function (b) {
+        return round(round(Number(a)) - round(Number(b)))
       }
     }
-    return obj
+    return {
+      get: get,
+      reset: reset,
+      add: add,
+      subtract: subtract
+    }
   }
 
   function forkPathModule () {
-    let obj = pathModule()
+    let path = a => round(Number(a))
 
-    obj.multiply = function (a) {
-      return function (b) {
-        return (a * b).toPrecision(10)
+    function get () {
+      return path
+    }
+    function reset () {
+      path = a => round(Number(a))
+    }
+    function multiply (a) {
+      path = function (b) {
+        return round(round(Number(a)) * round(Number(b)))
       }
     }
-    obj.divide = function (a) {
-      return function (b) {
-        return (a / b).toPrecision(10)
+    function divide (a) {
+      path = function (b) {
+        return round(round(Number(a)) / round(Number(b)))
       }
     }
-    return obj
+    return {
+      get: get,
+      reset: reset,
+      multiply: multiply,
+      divide: divide
+    }
   }
   function evaluateMainPath () {
-    this.forkTotal.set(this.round(this.forkPath.get()(this.input.get())))
-    this.total.set(this.round(this.mainPath.get()(this.forkTotal.get())))
-    this.mainPath.set(this.mainPath[this.currentOperator.get()](this.total.get()))
-    this.forkPath.set(a => Number(a))
-    this.input.set('')
-    this.currentOperator.set('')
+    this.forkTotal.set(this.forkPath.get()(this.input.get() || this.total.get()))
+    this.total.set(this.mainPath.get()(this.forkTotal.get()))
+    this.mainPath[this.currentOperator.get()](this.total.get())
+    this.forkPath.reset()
+    this.currentOperator.reset()
+    this.input.reset()
   }
   function evaluateForkPath () {
-    this.forkTotal.set(this.round(this.forkPath.get()(this.input.get())))
-    this.forkPath.set(this.forkPath[this.currentOperator.get()](this.forkTotal.get()))
-    this.input.set('')
-    this.currentOperator.set('')
+    this.forkTotal.set(this.forkPath.get()(this.input.get() || this.total.get()))
+    this.forkPath[this.currentOperator.get()](this.forkTotal.get())
+    this.currentOperator.reset()
+    this.input.reset()
   }
   function evaluateEquals () {
-    this.forkTotal.set(this.round(this.forkPath.get()(this.input.get())))
-    this.total.set(this.round(this.mainPath.get()(this.forkTotal.get())))
-    this.input.set(this.total.get())
-    this.mainPath.set(a => Number(a))
-    this.forkPath.set(a => Number(a))
-    this.currentOperator.set('')
+    this.forkTotal.set(this.forkPath.get()(this.input.get()))
+    this.total.set(this.mainPath.get()(this.forkTotal.get()))
+    this.softClear()
   }
-  function clear () {
-    this.input.set('')
+  function softClear () {
+    this.mainPath.reset()
+    this.forkPath.reset()
+    this.currentOperator.reset()
+    this.input.reset()
+  }
+  function hardClear () {
+    this.softClear()
     this.forkTotal.set(undefined)
     this.total.set(undefined)
-    this.curentOperator = ''
-    this.mainPath.set(a => Number(a))
-    this.forkPath.set(a => Number(a))
   }
   function round (value) {
-    return Number(Math.round(value + 'e' + 12) + 'e-' + 12)
-  }
-
-  window.calcMVC = window.calcMVC || {}
-  calcMVC.model = {
-    input: inputModule(),
-    total: totalModule(),
-    forkTotal: totalModule(),
-    forkPath: forkPathModule(),
-    mainPath: mainPathModule(),
-    currentOperator: stringModule(),
-    evaluateMainPath: evaluateMainPath,
-    evaluateForkPath: evaluateForkPath,
-    evaluateEquals: evaluateEquals,
-    clear: clear,
-    round: round
+    return (Number(Math.round(value + 'e' + 9) + 'e-' + 9) || Math.round(value * 1000000000) / 1000000000)
   }
 })(window);
 
@@ -144,30 +189,60 @@ VIEW
 *************************************************************************** */
 
 (function makeView (window, model) {
-  function displayInput () {
-    document.querySelector('.display').textContent = model.input.get()
-  }
-  function displayForkSubTotal () {
-    document.querySelector('.display').textContent = model.round(model.forkPath.get()(model.input.get()))
-  }
-  function displayMainSubTotal () {
-    document.querySelector('.display').textContent = model.round(model.mainPath.get()(model.round(model.forkPath.get()(model.input.get()))))
-  }
   window.calcMVC = window.calcMVC || {}
-  calcMVC.view = {
+
+  window.calcMVC.view = {
     displayInput: displayInput,
+    displayTotal: displayTotal,
     displayForkSubTotal: displayForkSubTotal,
     displayMainSubTotal: displayMainSubTotal
   }
-})(window, calcMVC.model);
+  function displayInput () {
+    let input = model.input.get()
+    document.querySelector('.display').textContent =
+    input.length > 9
+      ? Number(input).toExponential(5)
+      : input
+  }
+  function displayTotal () {
+    let total = model.total.get()
+    document.querySelector('.display').textContent =
+    String(total).length > 9
+      ? total.toExponential(5)
+      : total
+  }
+  function displayForkSubTotal () {
+    let subTotal = model.forkPath.get()(model.input.get() || model.total.get())
+    document.querySelector('.display').textContent =
+    String(subTotal).length > 9
+      ? subTotal.toExponential(5)
+      : subTotal
+  }
+  function displayMainSubTotal () {
+    let subTotal = model.mainPath.get()(model.forkPath.get()(model.input.get() || model.total.get()))
+    document.querySelector('.display').textContent =
+    String(subTotal).length > 9
+      ? subTotal.toExponential(5)
+      : subTotal
+  }
+})(window, window.calcMVC.model);
 
 /* **************************************************************************
 CONTROLLER
 *************************************************************************** */
 
 (function (window, model, view) {
+  window.calcMVC = window.calcMVC || {}
+
+  window.calcMVC.controller = {
+    numbersHandler: numbersHandler,
+    operatorHandler: operatorHandler,
+    clearHandler: clearHandler,
+    equalsHandler: equalsHandler,
+    initialize: initialize
+  }
   function numbersHandler () {
-    document.querySelector('.numbers').addEventListener('click', function (e) {
+    document.querySelector('.numbers').addEventListener('click', function numbersClickListen (e) {
       if (model.currentOperator.get() === 'add' || model.currentOperator.get() === 'subtract') {
         model.evaluateMainPath()
       } else if (model.currentOperator.get() === 'multiply' || model.currentOperator.get() === 'divide') {
@@ -188,24 +263,28 @@ CONTROLLER
     })
   }
   function operatorHandler () {
-    document.querySelector('.operators').addEventListener('click', function (e) {
-      model.currentOperator.set(e.target.className)
-      if (model.currentOperator.get() === 'add' || model.currentOperator.get() === 'subtract') {
-        view.displayMainSubTotal()
-      } else if (model.currentOperator.get() === 'multiply' || model.currentOperator.get() === 'divide') {
-        view.displayForkSubTotal()
+    document.querySelector('.operators').addEventListener('click', function operatorsClickListen (e) {
+      if (!model.input.get() && !model.total.get()) {
+        return
+      } else {
+        model.currentOperator[e.target.className]()
+        if (model.currentOperator.get() === 'add' || model.currentOperator.get() === 'subtract') {
+          view.displayMainSubTotal()
+        } else if (model.currentOperator.get() === 'multiply' || model.currentOperator.get() === 'divide') {
+          view.displayForkSubTotal()
+        }
       }
     })
   }
   function equalsHandler () {
-    document.querySelector('.equals').addEventListener('click', function (e) {
+    document.querySelector('.equals').addEventListener('click', function equalsClickListen (e) {
       model.evaluateEquals()
-      view.displayInput()
+      view.displayTotal()
     })
   }
   function clearHandler () {
-    document.querySelector('.clear').addEventListener('click', function (e) {
-      model.clear()
+    document.querySelector('.clear').addEventListener('click', function clearCLickListen (e) {
+      model.hardClear()
       view.displayInput()
     })
   }
@@ -215,14 +294,10 @@ CONTROLLER
     this.clearHandler()
     this.equalsHandler()
   }
-  window.calcMVC = window.calcMVC || {}
-  calcMVC.controller = {
-    numbersHandler: numbersHandler,
-    operatorHandler: operatorHandler,
-    clearHandler: clearHandler,
-    equalsHandler: equalsHandler,
-    initialize: initialize
-  }
-  calcMVC.controller.initialize()
+})(window, window.calcMVC.model, window.calcMVC.view)
 
-})(window, calcMVC.model, calcMVC.view)
+/* **************************************************************************
+INITIALIZE
+*************************************************************************** */
+
+window.calcMVC.controller.initialize()
