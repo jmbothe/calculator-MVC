@@ -1,4 +1,33 @@
 /* **************************************************************************
+CONSTANTS
+*************************************************************************** */
+
+const NUM_KEY_MAP = {
+  0: 'zero',
+  1: 'one',
+  2: 'two',
+  3: 'three',
+  4: 'four',
+  5: 'five',
+  6: 'six',
+  7: 'seven',
+  8: 'eight',
+  9: 'nine',
+  '.': 'decimal'
+}
+const OPERATOR_KEY_MAP = {
+  '/': 'divide',
+  '*': 'multiply',
+  '+': 'add',
+  '-': 'subtract'
+}
+const OTHER_KEY_MAP = {
+  'Enter': 'equals',
+  'Backspace': 'clear',
+  'Delete': 'clear'
+};
+
+/* **************************************************************************
 MODEL
 *************************************************************************** */
 
@@ -39,17 +68,18 @@ MODEL
       return input
     }
     function addCharEnd (char) {
-      input += char
+      if (/\d|\./.test(char))
+        input += char
     }
     function changeSign () {
-      input.indexOf('-') === -1 ? input = '-' + input : input = input.substring(1)
+      input = input.indexOf('-') === -1 ? '-' + input : input.substring(1)
     }
     function trimLeadingZeros () {
       if (input.indexOf('0') === 0 && input.length > 1)
         input = input.substring(1)
     }
-    function limitDecimalPoints () {
-      if (input.indexOf('.') !== -1 && input.indexOf('.') !== input.length - 1)
+    function limitDecimalPoints (className) {
+      if (className === 'decimal' && input.indexOf('.') !== -1 && input.indexOf('.') !== input.length - 1)
         input = input.substring(0, input.length - 1)
     }
     function reset () {
@@ -235,64 +265,98 @@ CONTROLLER
   window.calcMVC = window.calcMVC || {}
 
   window.calcMVC.controller = {
-    numbersHandler: numbersHandler,
-    operatorHandler: operatorHandler,
-    clearHandler: clearHandler,
-    equalsHandler: equalsHandler,
+    numbersListener: numbersListener,
+    operatorsListener: operatorsListener,
+    numbersClickHandler: numbersClickHandler,
+    numbersKeyHandler: numbersKeyHandler,
+    operatorsClickHandler: operatorsClickHandler,
+    operatorsKeyHandler: operatorsKeyHandler,
+    clearClickHandler: clearClickHandler,
+    clearKeyHandler: clearKeyHandler,
+    equalsClickHandler: equalsClickHandler,
+    keydownFocusHandler: keydownFocusHandler,
     initialize: initialize
   }
-  function numbersHandler () {
-    document.querySelector('.numbers').addEventListener('click', function numbersClickListen (e) {
-      if (model.currentOperator.get() === 'add' || model.currentOperator.get() === 'subtract') {
-        model.evaluateMainPath()
-      } else if (model.currentOperator.get() === 'multiply' || model.currentOperator.get() === 'divide') {
-        model.evaluateForkPath()
-      }
-      if (e.target.className === 'sign') {
-        model.input.changeSign()
-        view.displayInput()
-      } else if (e.target.className === 'decimal') {
-        model.input.addCharEnd(e.target.textContent)
-        model.input.limitDecimalPoints()
-        view.displayInput()
-      } else {
-        model.input.addCharEnd(e.target.textContent)
-        model.input.trimLeadingZeros()
-        view.displayInput()
-      }
-    })
+  function numbersListener (e) {
+    if (e.type === 'keydown' && !NUM_KEY_MAP.hasOwnProperty(e.key))
+      return
+    if (model.currentOperator.get() === 'add' || model.currentOperator.get() === 'subtract') {
+      model.evaluateMainPath()
+    } else if (model.currentOperator.get() === 'multiply' || model.currentOperator.get() === 'divide') {
+      model.evaluateForkPath()
+    }
+    if (e.target.className === 'sign') {
+      model.input.changeSign()
+      view.displayInput()
+    } else {
+      model.input.addCharEnd(e.key || e.target.textContent)
+      model.input.limitDecimalPoints(NUM_KEY_MAP[e.key] || e.target.className)
+      model.input.trimLeadingZeros()
+      view.displayInput()
+    }
   }
-  function operatorHandler () {
-    document.querySelector('.operators').addEventListener('click', function operatorsClickListen (e) {
-      if (!model.input.get() && !model.total.get()) {
-        return
-      } else {
-        model.currentOperator[e.target.className]()
-        if (model.currentOperator.get() === 'add' || model.currentOperator.get() === 'subtract') {
-          view.displayMainSubTotal()
-        } else if (model.currentOperator.get() === 'multiply' || model.currentOperator.get() === 'divide') {
-          view.displayForkSubTotal()
-        }
-      }
-    })
+  function operatorsListener (e) {
+    if ((e.type === 'keydown' && !OPERATOR_KEY_MAP.hasOwnProperty(e.key)) || (!model.input.get() && !model.total.get()))
+      return
+    model.currentOperator[OPERATOR_KEY_MAP[e.key] || e.target.className]()
+    if (model.currentOperator.get() === 'add' || model.currentOperator.get() === 'subtract') {
+      view.displayMainSubTotal()
+    } else if (model.currentOperator.get() === 'multiply' || model.currentOperator.get() === 'divide') {
+      view.displayForkSubTotal()
+    }
   }
-  function equalsHandler () {
+  function numbersClickHandler () {
+    document.querySelector('.numbers').addEventListener('click', this.numbersListener)
+  }
+  function numbersKeyHandler () {
+    window.addEventListener('keydown', this.numbersListener)
+  }
+  function operatorsClickHandler () {
+    document.querySelector('.operators').addEventListener('click', this.operatorsListener)
+  }
+  function operatorsKeyHandler () {
+    window.addEventListener('keydown', this.operatorsListener)
+  }
+  function equalsClickHandler () {
     document.querySelector('.equals').addEventListener('click', function equalsClickListen (e) {
       model.evaluateEquals()
       view.displayTotal()
     })
   }
-  function clearHandler () {
+  function clearClickHandler () {
     document.querySelector('.clear').addEventListener('click', function clearCLickListen (e) {
       model.hardClear()
       view.displayInput()
     })
   }
+  function clearKeyHandler () {
+    window.addEventListener('keydown', function (e) {
+      if (OTHER_KEY_MAP[e.key] === 'clear') {
+        model.hardClear()
+        view.displayInput()
+      }
+    })
+  }
+  function keydownFocusHandler () {
+    window.addEventListener('keydown', function (e) {
+      if (NUM_KEY_MAP.hasOwnProperty(e.key)) {
+        document.querySelector('.' + NUM_KEY_MAP[e.key]).focus()
+      } else if (OPERATOR_KEY_MAP.hasOwnProperty(e.key)) {
+        document.querySelector('.' + OPERATOR_KEY_MAP[e.key]).focus()
+      } else if (OTHER_KEY_MAP.hasOwnProperty(e.key)) {
+        document.querySelector('.' + OTHER_KEY_MAP[e.key]).focus()
+      }
+    })
+  }
   function initialize () {
-    this.numbersHandler()
-    this.operatorHandler()
-    this.clearHandler()
-    this.equalsHandler()
+    this.numbersClickHandler()
+    this.numbersKeyHandler()
+    this.operatorsClickHandler()
+    this.operatorsKeyHandler()
+    this.clearClickHandler()
+    this.clearKeyHandler()
+    this.equalsClickHandler()
+    this.keydownFocusHandler()
   }
 })(window, window.calcMVC.model, window.calcMVC.view)
 
