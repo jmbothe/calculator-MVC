@@ -80,11 +80,16 @@ MODEL
         input += char
     }
     function changeSign () {
+      if (/e/.test(input))
+        return
       input = input.indexOf('-') === -1 ? '-' + input : input.substring(1)
     }
     function trimLeadingZeros () {
-      if (input.indexOf('0') === 0 && input.length > 1 && input.indexOf('.') === -1)
+      if (input.indexOf('0') === 0 && input.length > 1 && !/\./.test(input)) {
         input = input.substring(1)
+      } else if (/^-0/.test(input) && input.length > 2 && !/\./.test(input)) {
+        input = '-' + input.substring(2)
+      }
     }
     function limitDecimalPoints (className) {
       if (className === 'decimal' && input.indexOf('.') !== -1 && input.indexOf('.') !== input.length - 1)
@@ -268,7 +273,7 @@ CONTROLLER
     initialize
   }
   function numbersListener (e) {
-    if (e.type === 'keydown' && !NUM_KEY_MAP.hasOwnProperty(e.key))
+    if ((e.type === 'keydown' && !NUM_KEY_MAP.hasOwnProperty(e.key)) || e.target.className === 'number-row')
       return
     if (model.currentOperator.get() === 'add' || model.currentOperator.get() === 'subtract') {
       model.evaluateMainPath()
