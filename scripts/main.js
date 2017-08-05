@@ -1,7 +1,9 @@
 /* **************************************************************************
 CONSTANTS
 *************************************************************************** */
-
+const round = function (value, places = 9) {
+  return (Number(Math.round(value + 'e' + places) + 'e-' + places) || value)
+}
 const NUM_KEY_MAP = {
   0: 'zero',
   1: 'one',
@@ -37,16 +39,16 @@ MODEL
   window.calcMVC.model = {
     input: inputModule(),
     total: totalModule(),
+    subTotal: totalModule(),
     forkTotal: totalModule(),
     forkPath: forkPathModule(),
     mainPath: mainPathModule(),
     currentOperator: operatorModule(),
-    evaluateMainPath: evaluateMainPath,
-    evaluateForkPath: evaluateForkPath,
-    evaluateEquals: evaluateEquals,
-    softClear: softClear,
-    hardClear: hardClear,
-    round: round
+    evaluateMainPath,
+    evaluateForkPath,
+    evaluateEquals,
+    softClear,
+    hardClear
   }
 
   function totalModule () {
@@ -56,42 +58,52 @@ MODEL
       return total
     }
     function set (number) {
-      total = number
+      if (number > 999999999) {
+        total = number.toExponential(3)
+      } else if (/\./.test(String(number))) {
+        total = round(number, 9 - String(number).indexOf('.'))
+      } else {
+        total = number
+      }
     }
     return {get: get, set: set}
   }
 
   function inputModule () {
-    let input = ''
+    let input = '0'
 
     function get () {
       return input
     }
     function addCharEnd (char) {
-      if (/\d|\./.test(char))
+      if (/\d|\./.test(char) && input.length < 9)
         input += char
     }
     function changeSign () {
       input = input.indexOf('-') === -1 ? '-' + input : input.substring(1)
     }
     function trimLeadingZeros () {
-      if (input.indexOf('0') === 0 && input.length > 1)
+      if (input.indexOf('0') === 0 && input.length > 1 && input.indexOf('.') === -1)
         input = input.substring(1)
     }
     function limitDecimalPoints (className) {
       if (className === 'decimal' && input.indexOf('.') !== -1 && input.indexOf('.') !== input.length - 1)
         input = input.substring(0, input.length - 1)
     }
+    function setToTotal () {
+      input = String(this.total.get())
+    }
     function reset () {
-      input = ''
+      input = '0'
     }
     return {
-      get: get,
-      addCharEnd: addCharEnd,
-      changeSign: changeSign,
-      trimLeadingZeros: trimLeadingZeros,
-      limitDecimalPoints: limitDecimalPoints,
-      reset: reset
+      get,
+      addCharEnd,
+      changeSign,
+      trimLeadingZeros,
+      limitDecimalPoints,
+      setToTotal,
+      reset
     }
   }
 
@@ -117,100 +129,98 @@ MODEL
       operator = 'divide'
     }
     return {
-      get: get,
-      reset: reset,
-      add: add,
-      subtract: subtract,
-      multiply: multiply,
-      divide: divide
+      get,
+      reset,
+      add,
+      subtract,
+      multiply,
+      divide
     }
   }
 
   function mainPathModule () {
-    let path = a => round(Number(a))
+    let path = a => Number(a)
 
-    function get () {
-      return path
+    function evaluate (number) {
+      return path(number)
     }
     function reset () {
-      path = a => round(Number(a))
+      path = a => Number(a)
     }
     function add (a) {
       path = function (b) {
-        return round(round(Number(a)) + round(Number(b)))
+        return round(Number(a) + Number(b))
       }
     }
     function subtract (a) {
       path = function (b) {
-        return round(round(Number(a)) - round(Number(b)))
+        return round(Number(a) - Number(b))
       }
     }
     return {
-      get: get,
-      reset: reset,
-      add: add,
-      subtract: subtract
+      evaluate,
+      reset,
+      add,
+      subtract
     }
   }
 
   function forkPathModule () {
-    let path = a => round(Number(a))
+    let path = a => Number(a)
 
-    function get () {
-      return path
+    function evaluate (number) {
+      return path(number)
     }
     function reset () {
-      path = a => round(Number(a))
+      path = a => Number(a)
     }
     function multiply (a) {
       path = function (b) {
-        return round(round(Number(a)) * round(Number(b)))
+        return round(Number(a) * Number(b))
       }
     }
     function divide (a) {
       path = function (b) {
-        return round(round(Number(a)) / round(Number(b)))
+        return round(Number(a) / Number(b))
       }
     }
     return {
-      get: get,
-      reset: reset,
-      multiply: multiply,
-      divide: divide
+      evaluate,
+      reset,
+      multiply,
+      divide
     }
   }
   function evaluateMainPath () {
-    this.forkTotal.set(this.forkPath.get()(this.input.get() || this.total.get()))
-    this.total.set(this.mainPath.get()(this.forkTotal.get()))
+    this.forkTotal.set(this.forkPath.evaluate(this.input.get()))
+    this.total.set(this.mainPath.evaluate(this.forkTotal.get()))
     this.mainPath[this.currentOperator.get()](this.total.get())
     this.forkPath.reset()
     this.currentOperator.reset()
     this.input.reset()
   }
   function evaluateForkPath () {
-    this.forkTotal.set(this.forkPath.get()(this.input.get() || this.total.get()))
+    this.forkTotal.set(this.forkPath.evaluate(this.input.get()))
     this.forkPath[this.currentOperator.get()](this.forkTotal.get())
     this.currentOperator.reset()
     this.input.reset()
   }
   function evaluateEquals () {
-    this.forkTotal.set(this.forkPath.get()(this.input.get()))
-    this.total.set(this.mainPath.get()(this.forkTotal.get()))
+    this.forkTotal.set(this.forkPath.evaluate(this.input.get()))
+    this.total.set(this.mainPath.evaluate(this.forkTotal.get()))
+    this.input.setToTotal.apply(this)
     this.softClear()
   }
   function softClear () {
     this.mainPath.reset()
     this.forkPath.reset()
     this.currentOperator.reset()
-    this.input.reset()
   }
   function hardClear () {
     this.softClear()
+    this.input.reset()
     this.forkTotal.set(undefined)
     this.total.set(undefined)
-  }
-  function round (value) {
-    return (Number(Math.round(value + 'e' + 9) + 'e-' + 9) || Math.round(value * 1000000000) / 1000000000)
   }
 })(window);
 
@@ -222,38 +232,18 @@ VIEW
   window.calcMVC = window.calcMVC || {}
 
   window.calcMVC.view = {
-    displayInput: displayInput,
-    displayTotal: displayTotal,
-    displayForkSubTotal: displayForkSubTotal,
-    displayMainSubTotal: displayMainSubTotal
+    displayInput,
+    displayTotal,
+    displaySubTotal
   }
   function displayInput () {
-    let input = model.input.get()
-    document.querySelector('.display').textContent =
-    input.length > 9
-      ? Number(input).toExponential(5)
-      : input
+    document.querySelector('.display').textContent = model.input.get()
   }
   function displayTotal () {
-    let total = model.total.get()
-    document.querySelector('.display').textContent =
-    String(total).length > 9
-      ? total.toExponential(5)
-      : total
+    document.querySelector('.display').textContent = model.total.get()
   }
-  function displayForkSubTotal () {
-    let subTotal = model.forkPath.get()(model.input.get() || model.total.get())
-    document.querySelector('.display').textContent =
-    String(subTotal).length > 9
-      ? subTotal.toExponential(5)
-      : subTotal
-  }
-  function displayMainSubTotal () {
-    let subTotal = model.mainPath.get()(model.forkPath.get()(model.input.get() || model.total.get()))
-    document.querySelector('.display').textContent =
-    String(subTotal).length > 9
-      ? subTotal.toExponential(5)
-      : subTotal
+  function displaySubTotal () {
+    document.querySelector('.display').textContent = model.subTotal.get()
   }
 })(window, window.calcMVC.model);
 
@@ -265,17 +255,17 @@ CONTROLLER
   window.calcMVC = window.calcMVC || {}
 
   window.calcMVC.controller = {
-    numbersListener: numbersListener,
-    operatorsListener: operatorsListener,
-    numbersClickHandler: numbersClickHandler,
-    numbersKeyHandler: numbersKeyHandler,
-    operatorsClickHandler: operatorsClickHandler,
-    operatorsKeyHandler: operatorsKeyHandler,
-    clearClickHandler: clearClickHandler,
-    clearKeyHandler: clearKeyHandler,
-    equalsClickHandler: equalsClickHandler,
-    keydownFocusHandler: keydownFocusHandler,
-    initialize: initialize
+    numbersListener,
+    operatorsListener,
+    numbersClickHandler,
+    numbersKeyHandler,
+    operatorsClickHandler,
+    operatorsKeyHandler,
+    clearClickHandler,
+    clearKeyHandler,
+    equalsClickHandler,
+    keydownFocusHandler,
+    initialize
   }
   function numbersListener (e) {
     if (e.type === 'keydown' && !NUM_KEY_MAP.hasOwnProperty(e.key))
@@ -300,9 +290,11 @@ CONTROLLER
       return
     model.currentOperator[OPERATOR_KEY_MAP[e.key] || e.target.className]()
     if (model.currentOperator.get() === 'add' || model.currentOperator.get() === 'subtract') {
-      view.displayMainSubTotal()
+      model.subTotal.set(model.mainPath.evaluate(model.forkPath.evaluate(model.input.get())))
+      view.displaySubTotal()
     } else if (model.currentOperator.get() === 'multiply' || model.currentOperator.get() === 'divide') {
-      view.displayForkSubTotal()
+      model.subTotal.set(model.forkPath.evaluate(model.input.get()))
+      view.displaySubTotal()
     }
   }
   function numbersClickHandler () {
@@ -320,7 +312,7 @@ CONTROLLER
   function equalsClickHandler () {
     document.querySelector('.equals').addEventListener('click', function equalsClickListen (e) {
       model.evaluateEquals()
-      view.displayTotal()
+      view.displayInput()
     })
   }
   function clearClickHandler () {
@@ -349,6 +341,7 @@ CONTROLLER
     })
   }
   function initialize () {
+    view.displayInput()
     this.numbersClickHandler()
     this.numbersKeyHandler()
     this.operatorsClickHandler()
