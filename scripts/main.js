@@ -80,9 +80,13 @@ MODEL
         input += char
     }
     function changeSign () {
-      if (/e/.test(input))
-        return
-      input = input.indexOf('-') === -1 ? '-' + input : input.substring(1)
+      if (Math.abs(Number(input)) > 999999999) {
+        input = String((Number(input) * -1).toExponential(3))
+      // } else if (/\./.test(String(Number(input)))) {
+      //   input = String(round((Number(input) * -1), 9 - String((Number(input) * -1)).indexOf('.')))
+      } else {
+        input = String(Number(input) * -1)
+      }
     }
     function trimLeadingZeros () {
       if (input.indexOf('0') === 0 && input.length > 1 && !/\./.test(input)) {
@@ -239,16 +243,24 @@ VIEW
   window.calcMVC.view = {
     displayInput,
     displayTotal,
-    displaySubTotal
+    displaySubTotal,
+    formatNumber
+  }
+  function formatNumber (string) {
+    if (!/\./.test(string)) {
+      return string.replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,')
+    } else {
+      return string.replace(/\.*0*e\+/, 'e')
+    }
   }
   function displayInput () {
-    document.querySelector('.display').textContent = model.input.get()
+    document.querySelector('.display').textContent = this.formatNumber(model.input.get())
   }
   function displayTotal () {
-    document.querySelector('.display').textContent = model.total.get()
+    document.querySelector('.display').textContent = this.formatNumber(String(model.total.get()))
   }
   function displaySubTotal () {
-    document.querySelector('.display').textContent = model.subTotal.get()
+    document.querySelector('.display').textContent = this.formatNumber(String(model.subTotal.get()))
   }
 })(window, window.calcMVC.model);
 
@@ -280,7 +292,7 @@ CONTROLLER
     } else if (model.currentOperator.get() === 'multiply' || model.currentOperator.get() === 'divide') {
       model.evaluateForkPath()
     }
-    if (e.target.className === 'sign') {
+    if (e.target.className === 'sign' && e.type !== 'keydown') {
       model.input.changeSign()
       view.displayInput()
     } else {

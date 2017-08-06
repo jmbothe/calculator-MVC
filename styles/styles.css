@@ -54,7 +54,7 @@ button:focus::after {
   flex-direction: column;
   justify-content: space-between;
   height: 100%;
-  width: 100%;
+  width: 320px;
   margin: 0 auto;
   padding: 2px;
 }
