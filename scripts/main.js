@@ -58,7 +58,7 @@ MODEL
       return total
     }
     function set (number) {
-      if (number > 999999999) {
+      if (Math.abs(number) > 999999999) {
         total = number.toExponential(3)
       } else if (/\./.test(String(number))) {
         total = round(number, 9 - String(number).indexOf('.'))
@@ -82,8 +82,6 @@ MODEL
     function changeSign () {
       if (Math.abs(Number(input)) > 999999999) {
         input = String((Number(input) * -1).toExponential(3))
-      // } else if (/\./.test(String(Number(input)))) {
-      //   input = String(round((Number(input) * -1), 9 - String((Number(input) * -1)).indexOf('.')))
       } else {
         input = String(Number(input) * -1)
       }
