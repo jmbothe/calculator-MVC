@@ -80,11 +80,7 @@ MODEL
         input += char
     }
     function changeSign () {
-      if (Math.abs(Number(input)) > 999999999) {
-        input = String((Number(input) * -1).toExponential(3))
-      } else {
-        input = String(Number(input) * -1)
-      }
+      input = input.indexOf('-') === -1 ? '-' + input : input.substring(1)
     }
     function trimLeadingZeros () {
       if (input.indexOf('0') === 0 && input.length > 1 && !/\./.test(input)) {
@@ -224,10 +220,14 @@ MODEL
     this.currentOperator.reset()
   }
   function hardClear () {
-    this.softClear()
-    this.input.reset()
-    this.forkTotal.set(undefined)
-    this.total.set(undefined)
+    if (this.input.get() !== '0') {
+      this.input.reset()
+    } else {
+      this.softClear()
+      this.input.reset()
+      this.forkTotal.set(undefined)
+      this.total.set(undefined)
+    }
   }
 })(window);
 
