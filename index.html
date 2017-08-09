@@ -1,58 +1,116 @@
 <!doctype html>
-<html class="no-js" lang="en" dir="ltr">
+<html class="no-js" lang="en" dir="ltr>
 
 <head>
   <meta charset="utf-8">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Calculator MVC</title>
+  <link href="https://fonts.googleapis.com/css?family=Nova+Mono" rel="stylesheet">
   <link rel="stylesheet" href="styles/styles.css">
-  <script type="text/javascript" src="scripts/main.js" defer></script>
+  <link rel="stylesheet" href="styles/styles-landscape.css">
+  <script src="scripts/main.js" defer></script>
 </head>
 
 <body>
-
-<section class="calculator">
-  <header class="display"></header>
-  <section class="inputs">
-    <section class="numbers">
-      <section class="number-row">
-        <button class="seven">7</button>
-        <button class="eight">8</button>
-        <button class="nine">9</button>
-      </section>
-      <section class="number-row">
-        <button class="four">4</button>
-        <button class="five">5</button>
-        <button class="six">6</button>
-      </section>
-      <section class="number-row">
-        <button class="one">1</button>
-        <button class="two">2</button>
-        <button class="three">3</button>
-      </section>
-      <section class="number-row">
-        <button class="sign">+/-</button>
-        <button class="zero">0</button>
-        <button class="decimal">.</button>
+  <section class="calculator">
+    <section id="display" class="button-container">
+      <section id="inner-display" class="button">
+        <section id="display-content" class="button-content">
+        </section>
       </section>
     </section>
-    <section class="operators">
-      <button class="divide">&divide;</button>
-      <button class="multiply">&times;</button>
-      <button class="subtract">-</button>
-      <button class="add">+</button>
+    <section id="seven" class="button-container">
+      <section id="inner-seven" class="button">
+        <section id="seven-content" class="button-content number">7</section>
+      </section>
+    </section>
+    <section id="eight" class="button-container">
+      <section id="inner-eight" class="button">
+        <section id="eight-content" class="button-content number">8</section>
+      </section>
+    </section>
+    <section id="nine" class="button-container">
+      <section id="inner-nine" class="button">
+        <section id="nine-content" class="button-content number">9</section>
+      </section>
+    </section>
+    <section id="divide" class="button-container">
+      <section id="inner-divide" class="button">
+        <section id="divide-content" class="button-content operator">&divide;</section>
+      </section>
+    </section>
+    <section id="four" class="button-container">
+      <section id="inner-four" class="button">
+        <section id="four-content" class="button-content number">4</section>
+      </section>
+    </section>
+    <section id="five" class="button-container">
+      <section id="inner-five" class="button">
+        <section id="five-content" class="button-content number">5</section>
+      </section>
+    </section>
+    <section id="six" class="button-container">
+      <section id="inner-six" class="button">
+        <section id="six-content" class="button-content number">6</section>
+      </section>
+    </section>
+    <section id="multiply" class="button-container">
+      <section id="inner-multiply" class="button">
+        <section id="multiply-content" class="button-content operator">&times;</section>
+      </section>
+    </section>
+    <section id="one" class="button-container">
+      <section id="inner-one" class="button">
+        <section id="one-content" class="button-content number">1</section>
+      </section>
+    </section>
+    <section id="two" class="button-container">
+      <section id="inner-two" class="button">
+        <section id="two-content" class="button-content number">2</section>
+      </section>
+    </section>
+    <section id="three" class="button-container">
+      <section id="inner-three" class="button">
+        <section id="three-content" class="button-content number">3</section>
+      </section>
+    </section>
+    <section id="add" class="button-container">
+      <section id="inner-add" class="button">
+        <section id="add-content" class="button-content operator">+</section>
+      </section>
+    </section>
+    <section id="sign" class="button-container">
+      <section id="inner-sign" class="button">
+        <section id="sign-content" class="button-content number">&plusmn;</section>
+      </section>
+    </section>
+    <section id="zero" class="button-container">
+      <section id="inner-zero" class="button">
+        <section id="zero-content" class="button-content">0</section>
+      </section>
+    </section>
+    <section id="decimal" class="button-container">
+      <section id="inner-decimal" class="button">
+        <section id="decimal-content" class="button-content number">.</section>
+      </section>
+    </section>
+    <section id="subtract" class="button-container">
+      <section id="inner-subtract" class="button">
+        <section id="subtract-content" class="button-content operator">-</section>
+      </section>
+    </section>
+    <section id="clear" class="button-container">
+      <section id="inner-clear" class="button">
+        <section id="clear-content" class="button-content">cl</section>
+      </section>
+    </section>
+    <section id="equals" class="button-container">
+      <section id="inner-equals" class="button">
+        <section id="equals-content" class="button-content">=</section>
+      </section>
     </section>
   </section>
-  <section class="clear-and-equals">
-    <section class='clear-container'>
-      <button class="clear">Clear</button>
-    </section>
-    <section class='equals-container'>
-      <button class="equals">=</button>
-    </section>
-  </section>
-</section>
 
 </body>
 </html>

@@ -89,8 +89,8 @@ MODEL
         input = '-' + input.substring(2)
       }
     }
-    function limitDecimalPoints (className) {
-      if (className === 'decimal' && input.indexOf('.') !== -1 && input.indexOf('.') !== input.length - 1)
+    function limitDecimalPoints (id) {
+      if (id === 'decimal' && input.indexOf('.') !== -1 && input.indexOf('.') !== input.length - 1)
         input = input.substring(0, input.length - 1)
     }
     function setToTotal () {
@@ -242,7 +242,10 @@ VIEW
     displayInput,
     displayTotal,
     displaySubTotal,
-    formatNumber
+    formatNumber,
+    setButtonSizePortrait,
+    setButtonSizeLandscape,
+    setButtonSize
   }
   function formatNumber (string) {
     if (!/\./.test(string)) {
@@ -252,13 +255,52 @@ VIEW
     }
   }
   function displayInput () {
-    document.querySelector('.display').textContent = this.formatNumber(model.input.get())
+    document.querySelector('#display-content').textContent = this.formatNumber(model.input.get())
   }
   function displayTotal () {
-    document.querySelector('.display').textContent = this.formatNumber(String(model.total.get()))
+    document.querySelector('#display-content').textContent = this.formatNumber(String(model.total.get()))
   }
   function displaySubTotal () {
-    document.querySelector('.display').textContent = this.formatNumber(String(model.subTotal.get()))
+    document.querySelector('#display-content').textContent = this.formatNumber(String(model.subTotal.get()))
+  }
+  function setButtonSizePortrait () {
+    if (document.querySelector('.calculator').offsetWidth > (2 / 3) * document.querySelector('.calculator').offsetHeight) {
+      document.querySelectorAll('.button').forEach(function (item) {
+        item.style.paddingTop = '16.66vh'
+      })
+    } else {
+      document.querySelectorAll('.button').forEach(function (item) {
+        if (item.id === 'inner-display') {
+          item.style.paddingTop = '25%'
+        } else if (item.id === 'inner-clear') {
+          item.style.paddingTop = '33.33%'
+        } else {
+          item.style.paddingTop = '100%'
+        }
+      })
+    }
+  }
+  function setButtonSizeLandscape () {
+    if (document.querySelector('.calculator').offsetWidth > (3 / 2) * document.querySelector('.calculator').offsetHeight) {
+      document.querySelectorAll('.button').forEach(function (item) {
+        item.style.paddingTop = '25vh'
+      })
+    } else {
+      document.querySelectorAll('.button').forEach(function (item) {
+        if (item.id === 'inner-display') {
+          item.style.paddingTop = '16.66%'
+        } else {
+          item.style.paddingTop = '100%'
+        }
+      })
+    }
+  }
+  function setButtonSize () {
+    if (window.matchMedia('(orientation: landscape)').matches) {
+      this.setButtonSizeLandscape()
+    } else if (window.matchMedia('(orientation: portrait)').matches) {
+      this.setButtonSizePortrait()
+    }
   }
 })(window, window.calcMVC.model);
 
@@ -280,22 +322,23 @@ CONTROLLER
     clearKeyHandler,
     equalsClickHandler,
     keydownFocusHandler,
+    buttonSizeHandler,
     initialize
   }
   function numbersListener (e) {
-    if ((e.type === 'keydown' && !NUM_KEY_MAP.hasOwnProperty(e.key)) || e.target.className === 'number-row')
+    if ((e.type === 'keydown' && !NUM_KEY_MAP.hasOwnProperty(e.key)))
       return
     if (model.currentOperator.get() === 'add' || model.currentOperator.get() === 'subtract') {
       model.evaluateMainPath()
     } else if (model.currentOperator.get() === 'multiply' || model.currentOperator.get() === 'divide') {
       model.evaluateForkPath()
     }
-    if (e.target.className === 'sign' && e.type !== 'keydown') {
+    if (e.target.id.substring(0, e.target.id.indexOf('-')) === 'sign' && e.type !== 'keydown') {
       model.input.changeSign()
       view.displayInput()
     } else {
       model.input.addCharEnd(e.key || e.target.textContent)
-      model.input.limitDecimalPoints(NUM_KEY_MAP[e.key] || e.target.className)
+      model.input.limitDecimalPoints(NUM_KEY_MAP[e.key] || e.target.id.substring(0, e.target.id.indexOf('-')))
       model.input.trimLeadingZeros()
       view.displayInput()
     }
@@ -303,7 +346,7 @@ CONTROLLER
   function operatorsListener (e) {
     if ((e.type === 'keydown' && !OPERATOR_KEY_MAP.hasOwnProperty(e.key)) || (!model.input.get() && !model.total.get()))
       return
-    model.currentOperator[OPERATOR_KEY_MAP[e.key] || e.target.className]()
+    model.currentOperator[OPERATOR_KEY_MAP[e.key] || e.target.id.substring(0, e.target.id.indexOf('-'))]()
     if (model.currentOperator.get() === 'add' || model.currentOperator.get() === 'subtract') {
       model.subTotal.set(model.mainPath.evaluate(model.forkPath.evaluate(model.input.get())))
       view.displaySubTotal()
@@ -313,25 +356,25 @@ CONTROLLER
     }
   }
   function numbersClickHandler () {
-    document.querySelector('.numbers').addEventListener('click', this.numbersListener)
+    document.querySelectorAll('.number').forEach(function (item) { item.addEventListener('click', this.numbersListener) }, this)
   }
   function numbersKeyHandler () {
     window.addEventListener('keydown', this.numbersListener)
   }
   function operatorsClickHandler () {
-    document.querySelector('.operators').addEventListener('click', this.operatorsListener)
+    document.querySelectorAll('.operator').forEach(function (item) { item.addEventListener('click', this.operatorsListener) }, this)
   }
   function operatorsKeyHandler () {
     window.addEventListener('keydown', this.operatorsListener)
   }
   function equalsClickHandler () {
-    document.querySelector('.equals').addEventListener('click', function equalsClickListen (e) {
+    document.querySelector('#equals-content').addEventListener('click', function equalsClickListen (e) {
       model.evaluateEquals()
       view.displayInput()
     })
   }
   function clearClickHandler () {
-    document.querySelector('.clear').addEventListener('click', function clearCLickListen (e) {
+    document.querySelector('#clear-content').addEventListener('click', function clearCLickListen (e) {
       model.hardClear()
       view.displayInput()
     })
@@ -347,16 +390,20 @@ CONTROLLER
   function keydownFocusHandler () {
     window.addEventListener('keydown', function (e) {
       if (NUM_KEY_MAP.hasOwnProperty(e.key)) {
-        document.querySelector('.' + NUM_KEY_MAP[e.key]).focus()
+        document.querySelector('#' + NUM_KEY_MAP[e.key] + '-content').focus()
       } else if (OPERATOR_KEY_MAP.hasOwnProperty(e.key)) {
-        document.querySelector('.' + OPERATOR_KEY_MAP[e.key]).focus()
+        document.querySelector('#' + OPERATOR_KEY_MAP[e.key] + '-content').focus()
       } else if (OTHER_KEY_MAP.hasOwnProperty(e.key)) {
-        document.querySelector('.' + OTHER_KEY_MAP[e.key]).focus()
+        document.querySelector('#' + OTHER_KEY_MAP[e.key] + '-content').focus()
       }
     })
   }
+  function buttonSizeHandler () {
+    window.addEventListener('resize', view.setButtonSize.bind(view))
+  }
   function initialize () {
     view.displayInput()
+    view.setButtonSize()
     this.numbersClickHandler()
     this.numbersKeyHandler()
     this.operatorsClickHandler()
@@ -365,6 +412,7 @@ CONTROLLER
     this.clearKeyHandler()
     this.equalsClickHandler()
     this.keydownFocusHandler()
+    this.buttonSizeHandler()
   }
 })(window, window.calcMVC.model, window.calcMVC.view)
 

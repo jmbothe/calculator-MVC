@@ -1,0 +1,110 @@
+@media only screen
+and (orientation : landscape) {
+
+  html {
+    font-size: 9vw;
+  }
+
+.button-container {
+  width: 16.66%;
+}
+
+.button {
+  max-width: 25vh;
+}
+
+#inner-display {
+  padding-top: 16.66%;
+}
+
+#inner-clear {
+  max-width: 25vh;
+  padding-top: 100%;
+  border-radius: 50%;
+}
+
+#clear-content {
+  border-radius: 50%;
+}
+
+#display-content {
+  font-size: 1.6rem
+}
+
+#display {
+  order: 1;
+}
+
+#seven {
+  order: 5;
+}
+
+#eight {
+  order: 6;
+}
+
+#nine{
+  order: 7;
+}
+
+#divide {
+  order: 2;
+}
+
+#four {
+  order: 11;
+}
+
+#five {
+  order: 12;
+}
+
+#six {
+  order: 13;
+}
+
+#multiply {
+  order: 8;
+}
+
+#one {
+  order: 17;
+}
+
+#two {
+  order: 18;
+}
+
+#three {
+  order: 19;
+}
+
+#subtract {
+  order: 3;
+}
+
+#sign {
+  order: 4;
+}
+
+#zero {
+  order: 10;
+}
+
+#decimal {
+  order: 16;
+}
+
+#add {
+  order: 9;
+}
+
+#clear {
+  order: 14;
+  width: 16.66%;
+}
+
+#equals {
+  order: 15;
+}
+}
