@@ -21,14 +21,14 @@ body {
   background-color: #fffff8
 }
 
-.button-container {
+.btn-container {
   display: flex;
   justify-content: center;
   align-items: center;
   width: 25%;
 }
 
-.button {
+.btn-shell {
   position: relative;
   width: 100%;
   max-width: 16.66vh;
@@ -36,7 +36,7 @@ body {
   border-radius: 50%;
 }
 
-.button-content {
+.btn {
   position: absolute;
   display: flex;
   justify-content: center;
@@ -51,34 +51,34 @@ body {
   background-color: #fffff8;
 }
 
-#display {
+#display-container {
   width: 100%;
 }
 
-#clear {
+#clear-container {
   width: 75%;
 }
 
-#inner-display {
+#display-shell {
   width: 100%;
   max-width: none;
   padding-top: 25%;
 }
 
-#inner-clear {
+#clear-shell {
   width: 100%;
   max-width: none;
   padding-top: 33.33%;
   border-radius: 30px;
 }
 
-#display-content {
+#display {
   border: none;
   box-shadow: none;
   justify-content: flex-end;
   font-size: 1.3rem;
 }
 
-#clear-content {
+#clear {
   border-radius: 30px;
 }

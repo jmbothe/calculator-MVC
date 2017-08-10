@@ -5,106 +5,106 @@ and (orientation : landscape) {
     font-size: 9vw;
   }
 
-.button-container {
+.btn-container {
   width: 16.66%;
 }
 
-.button {
+.btn-shell {
   max-width: 25vh;
 }
 
-#inner-display {
+#display-shell {
   padding-top: 16.66%;
 }
 
-#inner-clear {
+#clear-shell {
   max-width: 25vh;
   padding-top: 100%;
   border-radius: 50%;
 }
 
-#clear-content {
+#clear {
   border-radius: 50%;
 }
 
-#display-content {
+#display {
   font-size: 1.6rem
 }
 
-#display {
+#display-container {
   order: 1;
 }
 
-#seven {
+#seven-container {
   order: 5;
 }
 
-#eight {
+#eight-container {
   order: 6;
 }
 
-#nine{
+#nine-container {
   order: 7;
 }
 
-#divide {
+#divide-container {
   order: 2;
 }
 
-#four {
+#four-container {
   order: 11;
 }
 
-#five {
+#five-container {
   order: 12;
 }
 
-#six {
+#six-container {
   order: 13;
 }
 
-#multiply {
+#multiply-container {
   order: 8;
 }
 
-#one {
+#one-container {
   order: 17;
 }
 
-#two {
+#two-container {
   order: 18;
 }
 
-#three {
+#three-container {
   order: 19;
 }
 
-#subtract {
+#subtract-container {
   order: 3;
 }
 
-#sign {
+#sign-container {
   order: 4;
 }
 
-#zero {
+#zero-container {
   order: 10;
 }
 
-#decimal {
+#decimal-container {
   order: 16;
 }
 
-#add {
+#add-container {
   order: 9;
 }
 
-#clear {
+#clear-container {
   order: 14;
   width: 16.66%;
 }
 
-#equals {
+#equals-container {
   order: 15;
 }
 }

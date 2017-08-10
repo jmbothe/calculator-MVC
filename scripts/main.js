@@ -1,6 +1,7 @@
 /* **************************************************************************
 CONSTANTS
 *************************************************************************** */
+
 const round = function (value, places = 9) {
   return (Number(Math.round(value + 'e' + places) + 'e-' + places) || value)
 }
@@ -33,22 +34,21 @@ const OTHER_KEY_MAP = {
 MODEL
 *************************************************************************** */
 
-(function makeModel (window) {
-  window.calcMVC = window.calcMVC || {}
+(function makeModel () {
+  window.calcMVC = {}
 
   window.calcMVC.model = {
     input: inputModule(),
     total: totalModule(),
-    subTotal: totalModule(),
+    subtotal: totalModule(),
     forkTotal: totalModule(),
-    forkPath: forkPathModule(),
-    mainPath: mainPathModule(),
+    forkExpression: forkExpressionModule(),
+    mainExpression: mainExpressionModule(),
     currentOperator: operatorModule(),
-    evaluateMainPath,
-    evaluateForkPath,
+    evaluateSubtotal,
+    executeCurrentOperator,
     evaluateEquals,
-    softClear,
-    hardClear
+    clear
   }
 
   function totalModule () {
@@ -58,13 +58,9 @@ MODEL
       return total
     }
     function set (number) {
-      if (Math.abs(number) > 999999999) {
-        total = number.toExponential(3)
-      } else if (/\./.test(String(number))) {
-        total = round(number, 9 - String(number).indexOf('.'))
-      } else {
-        total = number
-      }
+      total = (/\./.test(String(number)))
+        ? round(number, 9 - String(number).indexOf('.'))
+        : number
     }
     return {get: get, set: set}
   }
@@ -76,7 +72,7 @@ MODEL
       return input
     }
     function addCharEnd (char) {
-      if (/\d|\./.test(char) && input.length < 9)
+      if (/\d|\./.test(char) && input.match(/\d/g).length < 9)
         input += char
     }
     function changeSign () {
@@ -89,12 +85,8 @@ MODEL
         input = '-' + input.substring(2)
       }
     }
-    function limitDecimalPoints (id) {
-      if (id === 'decimal' && input.indexOf('.') !== -1 && input.indexOf('.') !== input.length - 1)
-        input = input.substring(0, input.length - 1)
-    }
-    function setToTotal () {
-      input = String(this.total.get())
+    function setToSubtotal () {
+      input = String(this.subtotal.get())
     }
     function reset () {
       input = '0'
@@ -104,8 +96,7 @@ MODEL
       addCharEnd,
       changeSign,
       trimLeadingZeros,
-      limitDecimalPoints,
-      setToTotal,
+      setToSubtotal,
       reset
     }
   }
@@ -141,22 +132,22 @@ MODEL
     }
   }
 
-  function mainPathModule () {
-    let path = a => Number(a)
+  function mainExpressionModule () {
+    let expression = a => Number(a)
 
     function evaluate (number) {
-      return path(number)
+      return expression(number)
     }
     function reset () {
-      path = a => Number(a)
+      expression = a => Number(a)
     }
     function add (a) {
-      path = function (b) {
+      expression = function (b) {
         return round(Number(a) + Number(b))
       }
     }
     function subtract (a) {
-      path = function (b) {
+      expression = function (b) {
         return round(Number(a) - Number(b))
       }
     }
@@ -168,22 +159,22 @@ MODEL
     }
   }
 
-  function forkPathModule () {
-    let path = a => Number(a)
+  function forkExpressionModule () {
+    let expression = a => Number(a)
 
     function evaluate (number) {
-      return path(number)
+      return expression(number)
     }
     function reset () {
-      path = a => Number(a)
+      expression = a => Number(a)
     }
     function multiply (a) {
-      path = function (b) {
+      expression = function (b) {
         return round(Number(a) * Number(b))
       }
     }
     function divide (a) {
-      path = function (b) {
+      expression = function (b) {
         return round(Number(a) / Number(b))
       }
     }
@@ -194,227 +185,220 @@ MODEL
       divide
     }
   }
-  function evaluateMainPath () {
-    this.forkTotal.set(this.forkPath.evaluate(this.input.get()))
-    this.total.set(this.mainPath.evaluate(this.forkTotal.get()))
-    this.mainPath[this.currentOperator.get()](this.total.get())
-    this.forkPath.reset()
-    this.currentOperator.reset()
-    this.input.reset()
-  }
-  function evaluateForkPath () {
-    this.forkTotal.set(this.forkPath.evaluate(this.input.get()))
-    this.forkPath[this.currentOperator.get()](this.forkTotal.get())
-    this.currentOperator.reset()
-    this.input.reset()
-  }
-  function evaluateEquals () {
-    this.forkTotal.set(this.forkPath.evaluate(this.input.get()))
-    this.total.set(this.mainPath.evaluate(this.forkTotal.get()))
-    this.input.setToTotal.apply(this)
-    this.softClear()
-  }
-  function softClear () {
-    this.mainPath.reset()
-    this.forkPath.reset()
-    this.currentOperator.reset()
-  }
-  function hardClear () {
-    if (this.input.get() !== '0') {
-      this.input.reset()
+  function evaluateSubtotal () {
+    let operator = this.currentOperator.get()
+
+    if (operator === 'add' || operator === 'subtract' || !operator) {
+      this.subtotal.set(this.mainExpression.evaluate(this.forkExpression.evaluate(this.input.get())))
     } else {
-      this.softClear()
-      this.input.reset()
-      this.forkTotal.set(undefined)
-      this.total.set(undefined)
+      this.subtotal.set(this.forkExpression.evaluate(this.input.get()))
     }
   }
-})(window);
+  function executeCurrentOperator () {
+    let operator = this.currentOperator.get()
+    this.subtotal.set(undefined)
+
+    if (operator) {
+      this.forkTotal.set(this.forkExpression.evaluate(this.input.get()))
+
+      if (operator === 'add' || operator === 'subtract') {
+        this.total.set(this.mainExpression.evaluate(this.forkTotal.get()))
+        this.mainExpression[operator](this.total.get())
+        this.forkExpression.reset()
+      } else {
+        this.forkExpression[operator](this.forkTotal.get())
+      }
+      this.currentOperator.reset()
+      this.input.reset()
+    }
+  }
+  function evaluateEquals () {
+    this.evaluateSubtotal()
+    this.clear()
+  }
+  function clear () {
+    this.input.reset()
+    this.mainExpression.reset()
+    this.forkExpression.reset()
+    this.currentOperator.reset()
+    this.forkTotal.set(undefined)
+    this.total.set(undefined)
+  }
+})();
 
 /* **************************************************************************
 VIEW
 *************************************************************************** */
 
-(function makeView (window, model) {
-  window.calcMVC = window.calcMVC || {}
-
+(function makeView (model) {
   window.calcMVC.view = {
     displayInput,
     displayTotal,
-    displaySubTotal,
+    displaySubtotal,
     formatNumber,
-    setButtonSizePortrait,
-    setButtonSizeLandscape,
-    setButtonSize
-  }
-  function formatNumber (string) {
-    if (!/\./.test(string)) {
-      return string.replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,')
-    } else {
-      return string.replace(/\.*0*e\+/, 'e')
-    }
+    setShellSize
   }
   function displayInput () {
-    document.querySelector('#display-content').textContent = this.formatNumber(model.input.get())
+    document.querySelector('#display').textContent = this.formatNumber(model.input.get())
   }
   function displayTotal () {
-    document.querySelector('#display-content').textContent = this.formatNumber(String(model.total.get()))
+    document.querySelector('#display').textContent = this.formatNumber(String(model.total.get()))
   }
-  function displaySubTotal () {
-    document.querySelector('#display-content').textContent = this.formatNumber(String(model.subTotal.get()))
+  function displaySubtotal () {
+    document.querySelector('#display').textContent = this.formatNumber(String(model.subtotal.get()))
   }
-  function setButtonSizePortrait () {
-    if (document.querySelector('.calculator').offsetWidth > (2 / 3) * document.querySelector('.calculator').offsetHeight) {
-      document.querySelectorAll('.button').forEach(function (item) {
-        item.style.paddingTop = '16.66vh'
-      })
-    } else {
-      document.querySelectorAll('.button').forEach(function (item) {
-        if (item.id === 'inner-display') {
-          item.style.paddingTop = '25%'
-        } else if (item.id === 'inner-clear') {
-          item.style.paddingTop = '33.33%'
-        } else {
-          item.style.paddingTop = '100%'
-        }
-      })
-    }
+  function formatNumber (string) {
+    return (Math.abs(string) > 999999999)
+    ? (Number(string).toExponential(5) + '').replace(/\.*0*e\+/, 'e')
+    : string.split('.')[0].replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,') +
+      (String(/\./.test(string)).replace(/false/, '') && '.') +
+      (string.split('.')[1] || '').replace(/,/g, '')
   }
-  function setButtonSizeLandscape () {
-    if (document.querySelector('.calculator').offsetWidth > (3 / 2) * document.querySelector('.calculator').offsetHeight) {
-      document.querySelectorAll('.button').forEach(function (item) {
-        item.style.paddingTop = '25vh'
-      })
-    } else {
-      document.querySelectorAll('.button').forEach(function (item) {
-        if (item.id === 'inner-display') {
-          item.style.paddingTop = '16.66%'
-        } else {
-          item.style.paddingTop = '100%'
-        }
-      })
-    }
-  }
-  function setButtonSize () {
+  function setShellSize () {
     if (window.matchMedia('(orientation: landscape)').matches) {
-      this.setButtonSizeLandscape()
+      shellSize(1.5, '25vh', '16.66%', '100%')
     } else if (window.matchMedia('(orientation: portrait)').matches) {
-      this.setButtonSizePortrait()
+      shellSize(0.666, '16.66vh', '25%', '33.33%')
+    }
+    function shellSize (ratio, paddingAll, paddingDisplay, paddingClear) {
+      let calculator = document.querySelector('.calculator')
+      let btnShells = document.querySelectorAll('.btn-shell')
+
+      if (calculator.offsetWidth > (ratio) * calculator.offsetHeight) {
+        btnShells.forEach(function changePadding (item) {
+          item.style.paddingTop = paddingAll
+        })
+      } else {
+        btnShells.forEach(function changePadding (item) {
+          if (item.id === 'display-shell') {
+            item.style.paddingTop = paddingDisplay
+          } else if (item.id === 'clear-shell') {
+            item.style.paddingTop = paddingClear
+          } else {
+            item.style.paddingTop = '100%'
+          }
+        })
+      }
     }
   }
-})(window, window.calcMVC.model);
+})(window.calcMVC.model);
 
 /* **************************************************************************
 CONTROLLER
 *************************************************************************** */
 
-(function (window, model, view) {
-  window.calcMVC = window.calcMVC || {}
-
+(function makeController (model, view) {
   window.calcMVC.controller = {
-    numbersListener,
-    operatorsListener,
-    numbersClickHandler,
-    numbersKeyHandler,
-    operatorsClickHandler,
-    operatorsKeyHandler,
-    clearClickHandler,
-    clearKeyHandler,
-    equalsClickHandler,
-    keydownFocusHandler,
-    buttonSizeHandler,
-    initialize
+    initialize,
+    numbersHandler,
+    operatorsHandler,
+    numbersClickListener,
+    numbersKeyListener,
+    operatorsClickListener,
+    operatorsKeyListener,
+    clearClickListener,
+    clearKeyListener,
+    equalsClickListener,
+    equalsKeyListener,
+    keydownFocusListener,
+    shellSizeListener
   }
-  function numbersListener (e) {
-    if ((e.type === 'keydown' && !NUM_KEY_MAP.hasOwnProperty(e.key)))
+  function initialize () {
+    view.displayInput()
+    view.setShellSize()
+    this.numbersClickListener()
+    this.numbersKeyListener()
+    this.operatorsClickListener()
+    this.operatorsKeyListener()
+    this.clearClickListener()
+    this.clearKeyListener()
+    this.equalsClickListener()
+    this.equalsKeyListener()
+    this.keydownFocusListener()
+    this.shellSizeListener()
+  }
+  function numbersHandler (e) {
+    if (e.type === 'keydown' && !NUM_KEY_MAP.hasOwnProperty(e.key))
       return
-    if (model.currentOperator.get() === 'add' || model.currentOperator.get() === 'subtract') {
-      model.evaluateMainPath()
-    } else if (model.currentOperator.get() === 'multiply' || model.currentOperator.get() === 'divide') {
-      model.evaluateForkPath()
-    }
-    if (e.target.id.substring(0, e.target.id.indexOf('-')) === 'sign' && e.type !== 'keydown') {
+
+    model.executeCurrentOperator()
+
+    if ((e.target.id === 'decimal' || NUM_KEY_MAP[e.key] === 'decimal') && /\./.test(model.input.get())) {
+      return
+    } else if (e.target.id === 'sign') {
       model.input.changeSign()
-      view.displayInput()
     } else {
       model.input.addCharEnd(e.key || e.target.textContent)
-      model.input.limitDecimalPoints(NUM_KEY_MAP[e.key] || e.target.id.substring(0, e.target.id.indexOf('-')))
       model.input.trimLeadingZeros()
-      view.displayInput()
     }
+    view.displayInput()
   }
-  function operatorsListener (e) {
-    if ((e.type === 'keydown' && !OPERATOR_KEY_MAP.hasOwnProperty(e.key)) || (!model.input.get() && !model.total.get()))
+  function operatorsHandler (e) {
+    if (e.type === 'keydown' && !OPERATOR_KEY_MAP.hasOwnProperty(e.key))
       return
-    model.currentOperator[OPERATOR_KEY_MAP[e.key] || e.target.id.substring(0, e.target.id.indexOf('-'))]()
-    if (model.currentOperator.get() === 'add' || model.currentOperator.get() === 'subtract') {
-      model.subTotal.set(model.mainPath.evaluate(model.forkPath.evaluate(model.input.get())))
-      view.displaySubTotal()
-    } else if (model.currentOperator.get() === 'multiply' || model.currentOperator.get() === 'divide') {
-      model.subTotal.set(model.forkPath.evaluate(model.input.get()))
-      view.displaySubTotal()
-    }
+
+    if (model.subtotal.get() && !model.total.get())
+      model.input.setToSubtotal.call(model)
+
+    model.currentOperator[OPERATOR_KEY_MAP[e.key] || e.target.id]()
+    model.evaluateSubtotal()
+    view.displaySubtotal()
   }
-  function numbersClickHandler () {
-    document.querySelectorAll('.number').forEach(function (item) { item.addEventListener('click', this.numbersListener) }, this)
+  function numbersClickListener () {
+    document.querySelectorAll('.number').forEach(function listen (item) { item.addEventListener('click', this.numbersHandler) }, this)
   }
-  function numbersKeyHandler () {
-    window.addEventListener('keydown', this.numbersListener)
+  function numbersKeyListener () {
+    window.addEventListener('keydown', this.numbersHandler)
   }
-  function operatorsClickHandler () {
-    document.querySelectorAll('.operator').forEach(function (item) { item.addEventListener('click', this.operatorsListener) }, this)
+  function operatorsClickListener () {
+    document.querySelectorAll('.operator').forEach(function listen (item) { item.addEventListener('click', this.operatorsHandler) }, this)
   }
-  function operatorsKeyHandler () {
-    window.addEventListener('keydown', this.operatorsListener)
+  function operatorsKeyListener () {
+    window.addEventListener('keydown', this.operatorsHandler)
   }
-  function equalsClickHandler () {
-    document.querySelector('#equals-content').addEventListener('click', function equalsClickListen (e) {
+  function equalsClickListener () {
+    document.querySelector('#equals').addEventListener('click', function listen (e) {
       model.evaluateEquals()
+      view.displaySubtotal()
+    })
+  }
+  function equalsKeyListener () {
+    window.addEventListener('keydown', function listen (e) {
+      if (OTHER_KEY_MAP[e.key] === 'equals') {
+        model.evaluateEquals()
+        view.displaySubtotal()
+      }
+    })
+  }
+  function clearClickListener () {
+    document.querySelector('#clear').addEventListener('click', function listen (e) {
+      model.clear()
       view.displayInput()
     })
   }
-  function clearClickHandler () {
-    document.querySelector('#clear-content').addEventListener('click', function clearCLickListen (e) {
-      model.hardClear()
-      view.displayInput()
-    })
-  }
-  function clearKeyHandler () {
-    window.addEventListener('keydown', function (e) {
+  function clearKeyListener () {
+    window.addEventListener('keydown', function listen (e) {
       if (OTHER_KEY_MAP[e.key] === 'clear') {
-        model.hardClear()
+        model.clear()
         view.displayInput()
       }
     })
   }
-  function keydownFocusHandler () {
-    window.addEventListener('keydown', function (e) {
+  function keydownFocusListener () {
+    window.addEventListener('keydown', function listen (e) {
       if (NUM_KEY_MAP.hasOwnProperty(e.key)) {
-        document.querySelector('#' + NUM_KEY_MAP[e.key] + '-content').focus()
+        document.querySelector('#' + NUM_KEY_MAP[e.key]).focus()
       } else if (OPERATOR_KEY_MAP.hasOwnProperty(e.key)) {
-        document.querySelector('#' + OPERATOR_KEY_MAP[e.key] + '-content').focus()
+        document.querySelector('#' + OPERATOR_KEY_MAP[e.key]).focus()
       } else if (OTHER_KEY_MAP.hasOwnProperty(e.key)) {
-        document.querySelector('#' + OTHER_KEY_MAP[e.key] + '-content').focus()
+        document.querySelector('#' + OTHER_KEY_MAP[e.key]).focus()
       }
     })
   }
-  function buttonSizeHandler () {
-    window.addEventListener('resize', view.setButtonSize.bind(view))
+  function shellSizeListener () {
+    window.addEventListener('resize', view.setShellSize.bind(view))
   }
-  function initialize () {
-    view.displayInput()
-    view.setButtonSize()
-    this.numbersClickHandler()
-    this.numbersKeyHandler()
-    this.operatorsClickHandler()
-    this.operatorsKeyHandler()
-    this.clearClickHandler()
-    this.clearKeyHandler()
-    this.equalsClickHandler()
-    this.keydownFocusHandler()
-    this.buttonSizeHandler()
-  }
-})(window, window.calcMVC.model, window.calcMVC.view)
+})(window.calcMVC.model, window.calcMVC.view)
 
 /* **************************************************************************
 INITIALIZE
