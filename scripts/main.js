@@ -187,6 +187,7 @@ MODEL
       divide
     }
   }
+
   function evaluateSubtotal () {
     let operator = this.currentOperator.get()
 
@@ -196,12 +197,7 @@ MODEL
       this.subtotal.set(this.forkExpression.evaluate(this.input.get()))
     }
   }
-  function clearAfterEquals () {
-    if (this.total.get() == this.input.get() && !this.currentOperator.get()) {
-      this.input.reset()
-      this.total.set(undefined)
-    }
-  }
+
   function evaluatePendingExpression () {
     let operator = this.currentOperator.get()
 
@@ -227,6 +223,7 @@ MODEL
     this.currentOperator.reset()
     this.input.reset()
   }
+
   function evaluateEquals () {
     this.forkTotal.set(this.forkExpression.evaluate(this.input.get()))
     this.total.set(this.mainExpression.evaluate(this.forkTotal.get()))
@@ -235,6 +232,14 @@ MODEL
     this.forkExpression.reset()
     this.currentOperator.reset()
   }
+
+  function clearAfterEquals () {
+    if (this.total.get() == this.input.get() && !this.currentOperator.get()) {
+      this.input.reset()
+      this.total.set(undefined)
+    }
+  }
+
   function clear () {
     this.input.reset()
     this.mainExpression.reset()
@@ -255,7 +260,10 @@ VIEW
     displayTotal,
     displaySubtotal,
     formatNumber,
-    setShellSize
+    setShellSize,
+    quad,
+    drawBtnAnimation,
+    animateBtn
   }
   function displayInput () {
     document.querySelector('#display').textContent = this.formatNumber(model.input.get())
@@ -266,13 +274,15 @@ VIEW
   function displaySubtotal () {
     document.querySelector('#display').textContent = this.formatNumber(model.subtotal.get() + '')
   }
+
   function formatNumber (string) {
-    return (/e/.test(string) || +string > 999999999)
-    ? ((+string).toExponential(5) + '').replace(/\.*0*e/, 'e')
+    return (Math.abs(+string) > 999999999 || (Math.abs(+string) < 0.000001 && Math.abs(+string) > 0))
+    ? ((+string).toExponential(5) + '').replace(/\.*0*e/, 'e').replace(/\+/, '')
     : string.split('.')[0].replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,') +
       ((/\./.test(string) + '').replace(/false/, '') && '.') +
       (string.split('.')[1] || '').replace(/,/g, '')
   }
+
   function setShellSize () {
     if (window.matchMedia('(orientation: landscape)').matches) {
       shellSize(1.5, '25vh', '16.66%', '100%')
@@ -300,6 +310,62 @@ VIEW
       }
     }
   }
+
+  function quad (progress) {
+    return Math.pow(progress, 2)
+  }
+
+  function drawBtnAnimation (target, timePassed, timeFraction) {
+    let top = window.getComputedStyle(target, null).getPropertyValue('top')
+    let bottom = window.getComputedStyle(target, null).getPropertyValue('bottom')
+    let left = window.getComputedStyle(target, null).getPropertyValue('left')
+    let right = window.getComputedStyle(target, null).getPropertyValue('right')
+    let fontSize = window.getComputedStyle(target, null).getPropertyValue('font-size')
+
+    if (timeFraction < 0.5) {
+      target.style.top = (parseInt(top) + 1) + 'px'
+      target.style.bottom = (parseInt(bottom) + 1) + 'px'
+      target.style.left = (parseInt(left) + 1) + 'px'
+      target.style.right = (parseInt(right) + 1) + 'px'
+      target.style.fontSize = (parseInt(fontSize) - 1) + 'px'
+    } else {
+      target.style.top = (parseInt(top) - 1) + 'px'
+      target.style.bottom = (parseInt(bottom) - 1) + 'px'
+      target.style.left = (parseInt(left) - 1) + 'px'
+      target.style.right = (parseInt(right) - 1) + 'px'
+      target.style.fontSize = (parseInt(fontSize) + 1) + 'px'
+    }
+  }
+
+  function resetBtnSize (target) {
+    target.style.top = '3%'
+    target.style.bottom = '3%'
+    target.style.left = '3%'
+    target.style.right = '3%'
+    target.style.fontSize = '1rem'
+  }
+
+  function animateBtn (target, {timing, draw, duration}) {
+  let start = performance.now()
+
+  requestAnimationFrame(function animate (time) {
+    // timeFraction goes from 0 to 1
+    let timeFraction = (time - start) / duration
+    if (timeFraction > 1) timeFraction = 1
+
+    // calculate the current animation state
+    let progress = timing(timeFraction)
+
+    draw(target, progress, timeFraction) // draw it
+
+    if (timeFraction < 1) {
+      requestAnimationFrame(animate)
+    } else {
+      resetBtnSize(target)
+    }
+
+  });
+}
 })(window.calcMVC.model);
 
 /* **************************************************************************
@@ -311,34 +377,26 @@ CONTROLLER
     initialize,
     numbersHandler,
     operatorsHandler,
+    generalKeyListener,
     numbersClickListener,
-    numbersKeyListener,
     operatorsClickListener,
-    operatorsKeyListener,
     clearClickListener,
-    clearKeyListener,
     equalsClickListener,
-    equalsKeyListener,
-    keydownFocusListener,
     shellSizeListener
   }
   function initialize () {
     view.displayInput()
     view.setShellSize()
+    this.generalKeyListener()
     this.numbersClickListener()
-    this.numbersKeyListener()
     this.operatorsClickListener()
-    this.operatorsKeyListener()
     this.clearClickListener()
-    this.clearKeyListener()
     this.equalsClickListener()
-    this.equalsKeyListener()
-    this.keydownFocusListener()
     this.shellSizeListener()
   }
+
   function numbersHandler (e) {
-    if (e.type === 'keydown' && !NUM_KEY_MAP.hasOwnProperty(e.key))
-      return
+    let keyTarget = document.querySelector('#' + NUM_KEY_MAP[e.key])
 
     model.clearAfterEquals()
     model.evaluatePendingExpression()
@@ -354,64 +412,55 @@ CONTROLLER
       model.input.trimLeadingZeros()
     }
     view.displayInput()
+    view.animateBtn(keyTarget || e.target, {timing: view.quad, draw: view.drawBtnAnimation, duration: 150})
   }
+
   function operatorsHandler (e) {
-    if (e.type === 'keydown' && !OPERATOR_KEY_MAP.hasOwnProperty(e.key))
-      return
+    let keyTarget = document.querySelector('#' + OPERATOR_KEY_MAP[e.key])
 
     model.currentOperator[OPERATOR_KEY_MAP[e.key] || e.target.id]()
     model.evaluateSubtotal()
     view.displaySubtotal()
+    view.animateBtn(keyTarget || e.target, {timing: view.quad, draw: view.drawBtnAnimation, duration: 150})
   }
+
+  function generalKeyListener () {
+    window.addEventListener('keydown', function listen (e) {
+      let keyTarget = document.querySelector('#' + OTHER_KEY_MAP[e.key])
+      if (NUM_KEY_MAP.hasOwnProperty(e.key)) {
+        this.numbersHandler(e)
+      } else if (OPERATOR_KEY_MAP.hasOwnProperty(e.key)) {
+        this.operatorsHandler(e)
+      } else if (e.key === 'Enter') {
+        model.evaluateEquals()
+        view.displayTotal()
+        view.animateBtn(keyTarget, {timing: view.quad, draw: view.drawBtnAnimation, duration: 150})
+      } else if (e.key === 'Backspace' || e.key === 'Delete') {
+        model.clear()
+        view.displayInput()
+        view.animateBtn(keyTarget, {timing: view.quad, draw: view.drawBtnAnimation, duration: 150})
+      }
+    }.bind(this))
+  }
+
   function numbersClickListener () {
     document.querySelectorAll('.number').forEach(function listen (item) { item.addEventListener('click', this.numbersHandler) }, this)
   }
-  function numbersKeyListener () {
-    window.addEventListener('keydown', this.numbersHandler)
-  }
   function operatorsClickListener () {
     document.querySelectorAll('.operator').forEach(function listen (item) { item.addEventListener('click', this.operatorsHandler) }, this)
-  }
-  function operatorsKeyListener () {
-    window.addEventListener('keydown', this.operatorsHandler)
   }
   function equalsClickListener () {
     document.querySelector('#equals').addEventListener('click', function listen (e) {
       model.evaluateEquals()
       view.displayTotal()
-    })
-  }
-  function equalsKeyListener () {
-    window.addEventListener('keydown', function listen (e) {
-      if (OTHER_KEY_MAP[e.key] === 'equals') {
-        model.evaluateEquals()
-        view.displayTotal()
-      }
+      view.animateBtn(e.target, {timing: view.quad, draw: view.drawBtnAnimation, duration: 150})
     })
   }
   function clearClickListener () {
     document.querySelector('#clear').addEventListener('click', function listen (e) {
       model.clear()
       view.displayInput()
-    })
-  }
-  function clearKeyListener () {
-    window.addEventListener('keydown', function listen (e) {
-      if (OTHER_KEY_MAP[e.key] === 'clear') {
-        model.clear()
-        view.displayInput()
-      }
-    })
-  }
-  function keydownFocusListener () {
-    window.addEventListener('keydown', function listen (e) {
-      if (NUM_KEY_MAP.hasOwnProperty(e.key)) {
-        document.querySelector('#' + NUM_KEY_MAP[e.key]).focus()
-      } else if (OPERATOR_KEY_MAP.hasOwnProperty(e.key)) {
-        document.querySelector('#' + OPERATOR_KEY_MAP[e.key]).focus()
-      } else if (OTHER_KEY_MAP.hasOwnProperty(e.key)) {
-        document.querySelector('#' + OTHER_KEY_MAP[e.key]).focus()
-      }
+      view.animateBtn(e.target, {timing: view.quad, draw: view.drawBtnAnimation, duration: 150})
     })
   }
   function shellSizeListener () {

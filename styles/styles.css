@@ -18,7 +18,7 @@ body {
   flex-wrap: wrap;
   align-items: stretch;
   height: 100%;
-  background-color: #fffff8
+  background-color: hsl(60, 50%, 98%)
 }
 
 .btn-container {
@@ -48,7 +48,7 @@ body {
   border-radius: 50%;
   border: 1px solid #ddd;
   box-shadow: 2px 2px 4px #888866;
-  background-color: #fffff8;
+  background-color: hsl(60, 50%, 98%);
 }
 
 #display-container {
@@ -81,4 +81,43 @@ body {
 
 #clear {
   border-radius: 30px;
+}
+
+/* Push */
+@-webkit-keyframes push {
+  50% {
+    -webkit-transform: scale(0.8);
+    transform: scale(0.8);
+  }
+  100% {
+    -webkit-transform: scale(1);
+    transform: scale(1);
+  }
+}
+@keyframes push {
+  50% {
+    -webkit-transform: scale(0.8);
+    transform: scale(0.8);
+  }
+  100% {
+    -webkit-transform: scale(1);
+    transform: scale(1);
+  }
+}
+.push {
+  display: inline-block;
+  vertical-align: middle;
+  -webkit-transform: perspective(1px) translateZ(0);
+  transform: perspective(1px) translateZ(0);
+  box-shadow: 0 0 1px transparent;
+}
+.push:hover, .push:focus, .push:active {
+  -webkit-animation-name: push;
+  animation-name: push;
+  -webkit-animation-duration: 0.3s;
+  animation-duration: 0.3s;
+  -webkit-animation-timing-function: linear;
+  animation-timing-function: linear;
+  -webkit-animation-iteration-count: 1;
+  animation-iteration-count: 1;
 }
