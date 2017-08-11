@@ -34,22 +34,22 @@ const OTHER_KEY_MAP = {
 MODEL
 *************************************************************************** */
 
-(function makeModel () {
-  window.calcMVC = {}
+(function makeModel (globalObject) {
+  window.calculatorMVC = {}
 
-  window.calcMVC.model = {
+  window.calculatorMVC.model = {
     input: inputModule(),
     total: totalModule(),
-    subtotal: totalModule(),
     forkTotal: totalModule(),
-    forkExpression: forkExpressionModule(),
+    subTotal: totalModule(), // used for view.display purposes only
     mainExpression: mainExpressionModule(),
+    forkExpression: forkExpressionModule(),
     currentOperator: operatorModule(),
-    evaluateSubtotal,
-    clearAfterEquals,
     evaluatePendingExpression,
     setVariables,
+    evaluateSubTotal,
     evaluateEquals,
+    clearAfterEquals,
     clear
   }
 
@@ -188,13 +188,13 @@ MODEL
     }
   }
 
-  function evaluateSubtotal () {
+  function evaluateSubTotal () {
     let operator = this.currentOperator.get()
 
     if (operator === 'add' || operator === 'subtract' || !operator) {
-      this.subtotal.set(this.mainExpression.evaluate(this.forkExpression.evaluate(this.input.get())))
+      this.subTotal.set(this.mainExpression.evaluate(this.forkExpression.evaluate(this.input.get())))
     } else if (operator === 'multiply' || operator === 'divide') {
-      this.subtotal.set(this.forkExpression.evaluate(this.input.get()))
+      this.subTotal.set(this.forkExpression.evaluate(this.input.get()))
     }
   }
 
@@ -248,22 +248,22 @@ MODEL
     this.forkTotal.set(undefined)
     this.total.set(undefined)
   }
-})();
+})(window);
 
 /* **************************************************************************
 VIEW
 *************************************************************************** */
 
-(function makeView (model) {
-  window.calcMVC.view = {
+(function makeView (globalObject, model) {
+  window.calculatorMVC.view = {
     displayInput,
     displayTotal,
-    displaySubtotal,
+    displaySubTotal,
     formatNumber,
+    respondToOrientation,
     setShellSize,
-    quad,
-    drawBtnAnimation,
-    animateBtn
+    drawButtonAnimation,
+    animateButton
   }
   function displayInput () {
     document.querySelector('#display').textContent = this.formatNumber(model.input.get())
@@ -271,51 +271,54 @@ VIEW
   function displayTotal () {
     document.querySelector('#display').textContent = this.formatNumber(model.total.get() + '')
   }
-  function displaySubtotal () {
-    document.querySelector('#display').textContent = this.formatNumber(model.subtotal.get() + '')
+  function displaySubTotal () {
+    document.querySelector('#display').textContent = this.formatNumber(model.subTotal.get() + '')
   }
 
   function formatNumber (string) {
-    return (Math.abs(+string) > 999999999 || (Math.abs(+string) < 0.000001 && Math.abs(+string) > 0))
-    ? ((+string).toExponential(5) + '').replace(/\.*0*e/, 'e').replace(/\+/, '')
-    : string.split('.')[0].replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,') +
-      ((/\./.test(string) + '').replace(/false/, '') && '.') +
-      (string.split('.')[1] || '').replace(/,/g, '')
+    let largeThreshold = 999999999
+    let smallThreshold = 0.000001
+
+    return (Math.abs(+string) > largeThreshold ||
+    (Math.abs(+string) < smallThreshold && Math.abs(+string) > 0))
+      ? ((+string).toExponential(5) + '').replace(/\.*0*e/, 'e').replace(/\+/, '')
+      : string.split('.')[0].replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,') +
+        ((/\./.test(string) + '').replace(/false/, '') && '.') +
+        (string.split('.')[1] || '').replace(/,/g, '')
   }
 
-  function setShellSize () {
+  function respondToOrientation () {
     if (window.matchMedia('(orientation: landscape)').matches) {
-      shellSize(1.5, '25vh', '16.66%', '100%')
+      this.setShellSize(1.5, '25vh', '16.66%', '100%')
+      document.querySelector('#clear').textContent = 'cl'
     } else if (window.matchMedia('(orientation: portrait)').matches) {
-      shellSize(0.666, '16.66vh', '25%', '33.33%')
-    }
-    function shellSize (ratio, paddingAll, paddingDisplay, paddingClear) {
-      let calculator = document.querySelector('.calculator')
-      let btnShells = document.querySelectorAll('.btn-shell')
-
-      if (calculator.offsetWidth > (ratio) * calculator.offsetHeight) {
-        btnShells.forEach(function changePadding (item) {
-          item.style.paddingTop = paddingAll
-        })
-      } else {
-        btnShells.forEach(function changePadding (item) {
-          if (item.id === 'display-shell') {
-            item.style.paddingTop = paddingDisplay
-          } else if (item.id === 'clear-shell') {
-            item.style.paddingTop = paddingClear
-          } else {
-            item.style.paddingTop = '100%'
-          }
-        })
-      }
+      this.setShellSize(0.666, '16.66vh', '25%', '33.33%')
+      document.querySelector('#clear').textContent = 'clear'
     }
   }
 
-  function quad (progress) {
-    return Math.pow(progress, 2)
+  function setShellSize (ratio, paddingAll, paddingDisplay, paddingClear) {
+    let calculator = document.querySelector('.calculator')
+    let buttonShells = document.querySelectorAll('.button-shell')
+
+    if (calculator.offsetWidth > (ratio) * calculator.offsetHeight) {
+      buttonShells.forEach(function changePadding (item) {
+        item.style.paddingTop = paddingAll
+      })
+    } else {
+      buttonShells.forEach(function changePadding (item) {
+        if (item.id === 'display-shell') {
+          item.style.paddingTop = paddingDisplay
+        } else if (item.id === 'clear-shell') {
+          item.style.paddingTop = paddingClear
+        } else {
+          item.style.paddingTop = '100%'
+        }
+      })
+    }
   }
 
-  function drawBtnAnimation (target, timePassed, timeFraction) {
+  function drawButtonAnimation (target, timeFraction) {
     let top = window.getComputedStyle(target, null).getPropertyValue('top')
     let bottom = window.getComputedStyle(target, null).getPropertyValue('bottom')
     let left = window.getComputedStyle(target, null).getPropertyValue('left')
@@ -323,57 +326,47 @@ VIEW
     let fontSize = window.getComputedStyle(target, null).getPropertyValue('font-size')
 
     if (timeFraction < 0.5) {
-      target.style.top = (parseInt(top) + 1) + 'px'
-      target.style.bottom = (parseInt(bottom) + 1) + 'px'
-      target.style.left = (parseInt(left) + 1) + 'px'
-      target.style.right = (parseInt(right) + 1) + 'px'
-      target.style.fontSize = (parseInt(fontSize) - 1) + 'px'
+      target.style.top = (parseFloat(top) + 1) + 'px'
+      target.style.bottom = (parseFloat(bottom) + 1) + 'px'
+      target.style.left = (parseFloat(left) + 1) + 'px'
+      target.style.right = (parseFloat(right) + 1) + 'px'
+      target.style.fontSize = (parseFloat(fontSize) - 1) + 'px'
+    } else if (timeFraction >= 0.5 && timeFraction < 1) {
+      target.style.top = (parseFloat(top) - 1) + 'px'
+      target.style.bottom = (parseFloat(bottom) - 1) + 'px'
+      target.style.left = (parseFloat(left) - 1) + 'px'
+      target.style.right = (parseFloat(right) - 1) + 'px'
+      target.style.fontSize = (parseFloat(fontSize) + 1) + 'px'
     } else {
-      target.style.top = (parseInt(top) - 1) + 'px'
-      target.style.bottom = (parseInt(bottom) - 1) + 'px'
-      target.style.left = (parseInt(left) - 1) + 'px'
-      target.style.right = (parseInt(right) - 1) + 'px'
-      target.style.fontSize = (parseInt(fontSize) + 1) + 'px'
+      target.style.top = '3%'
+      target.style.bottom = '3%'
+      target.style.left = '3%'
+      target.style.right = '3%'
+      target.style.fontSize = '1rem'
     }
   }
 
-  function resetBtnSize (target) {
-    target.style.top = '3%'
-    target.style.bottom = '3%'
-    target.style.left = '3%'
-    target.style.right = '3%'
-    target.style.fontSize = '1rem'
+  function animateButton (target, draw, duration) {
+    let start = performance.now()
+
+    requestAnimationFrame(function animate (time) {
+      let timeFraction = (time - start) / duration
+      if (timeFraction > 1) timeFraction = 1
+
+      draw(target, timeFraction)
+
+      if (timeFraction < 1)
+        requestAnimationFrame(animate)
+    })
   }
-
-  function animateBtn (target, {timing, draw, duration}) {
-  let start = performance.now()
-
-  requestAnimationFrame(function animate (time) {
-    // timeFraction goes from 0 to 1
-    let timeFraction = (time - start) / duration
-    if (timeFraction > 1) timeFraction = 1
-
-    // calculate the current animation state
-    let progress = timing(timeFraction)
-
-    draw(target, progress, timeFraction) // draw it
-
-    if (timeFraction < 1) {
-      requestAnimationFrame(animate)
-    } else {
-      resetBtnSize(target)
-    }
-
-  });
-}
-})(window.calcMVC.model);
+})(window, window.calculatorMVC.model);
 
 /* **************************************************************************
 CONTROLLER
 *************************************************************************** */
 
-(function makeController (model, view) {
-  window.calcMVC.controller = {
+(function makeController (globalObject, model, view) {
+  window.calculatorMVC.controller = {
     initialize,
     numbersHandler,
     operatorsHandler,
@@ -382,17 +375,17 @@ CONTROLLER
     operatorsClickListener,
     clearClickListener,
     equalsClickListener,
-    shellSizeListener
+    resizeListener
   }
   function initialize () {
     view.displayInput()
-    view.setShellSize()
+    view.respondToOrientation()
     this.generalKeyListener()
     this.numbersClickListener()
     this.operatorsClickListener()
     this.clearClickListener()
     this.equalsClickListener()
-    this.shellSizeListener()
+    this.resizeListener()
   }
 
   function numbersHandler (e) {
@@ -402,7 +395,7 @@ CONTROLLER
     model.evaluatePendingExpression()
     model.setVariables()
 
-    if ((e.target.id === 'decimal' || NUM_KEY_MAP[e.key] === 'decimal') && /\./.test(model.input.get()))
+    if ((e.target.id === 'decimal' || keyTarget === '#decimal') && /\./.test(model.input.get()))
       return
 
     if (e.target.id === 'sign') {
@@ -412,21 +405,22 @@ CONTROLLER
       model.input.trimLeadingZeros()
     }
     view.displayInput()
-    view.animateBtn(keyTarget || e.target, {timing: view.quad, draw: view.drawBtnAnimation, duration: 150})
+    view.animateButton(keyTarget || e.target, view.drawButtonAnimation, 100)
   }
 
   function operatorsHandler (e) {
     let keyTarget = document.querySelector('#' + OPERATOR_KEY_MAP[e.key])
 
     model.currentOperator[OPERATOR_KEY_MAP[e.key] || e.target.id]()
-    model.evaluateSubtotal()
-    view.displaySubtotal()
-    view.animateBtn(keyTarget || e.target, {timing: view.quad, draw: view.drawBtnAnimation, duration: 150})
+    model.evaluateSubTotal()
+    view.displaySubTotal()
+    view.animateButton(keyTarget || e.target, view.drawButtonAnimation, 100)
   }
 
   function generalKeyListener () {
     window.addEventListener('keydown', function listen (e) {
       let keyTarget = document.querySelector('#' + OTHER_KEY_MAP[e.key])
+
       if (NUM_KEY_MAP.hasOwnProperty(e.key)) {
         this.numbersHandler(e)
       } else if (OPERATOR_KEY_MAP.hasOwnProperty(e.key)) {
@@ -434,11 +428,11 @@ CONTROLLER
       } else if (e.key === 'Enter') {
         model.evaluateEquals()
         view.displayTotal()
-        view.animateBtn(keyTarget, {timing: view.quad, draw: view.drawBtnAnimation, duration: 150})
+        view.animateButton(keyTarget, view.drawButtonAnimation, 100)
       } else if (e.key === 'Backspace' || e.key === 'Delete') {
         model.clear()
         view.displayInput()
-        view.animateBtn(keyTarget, {timing: view.quad, draw: view.drawBtnAnimation, duration: 150})
+        view.animateButton(keyTarget, view.drawButtonAnimation, 100)
       }
     }.bind(this))
   }
@@ -453,23 +447,23 @@ CONTROLLER
     document.querySelector('#equals').addEventListener('click', function listen (e) {
       model.evaluateEquals()
       view.displayTotal()
-      view.animateBtn(e.target, {timing: view.quad, draw: view.drawBtnAnimation, duration: 150})
+      view.animateButton(e.target, view.drawButtonAnimation, 100)
     })
   }
   function clearClickListener () {
     document.querySelector('#clear').addEventListener('click', function listen (e) {
       model.clear()
       view.displayInput()
-      view.animateBtn(e.target, {timing: view.quad, draw: view.drawBtnAnimation, duration: 150})
+      view.animateButton(e.target, view.drawButtonAnimation, 100)
     })
   }
-  function shellSizeListener () {
-    window.addEventListener('resize', view.setShellSize.bind(view))
+  function resizeListener () {
+    window.addEventListener('resize', view.respondToOrientation.bind(view))
   }
-})(window.calcMVC.model, window.calcMVC.view)
+})(window, window.calculatorMVC.model, window.calculatorMVC.view)
 
 /* **************************************************************************
 INITIALIZE
 *************************************************************************** */
 
-window.calcMVC.controller.initialize()
+window.calculatorMVC.controller.initialize()

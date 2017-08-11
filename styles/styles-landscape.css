@@ -5,11 +5,11 @@ and (orientation : landscape) {
     font-size: 9vw;
   }
 
-.btn-container {
+.button-container {
   width: 16.66%;
 }
 
-.btn-shell {
+.button-shell {
   max-width: 25vh;
 }
 
