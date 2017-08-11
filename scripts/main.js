@@ -172,7 +172,7 @@ MODEL
     }
     function multiply (a) {
       expression = function (b) {
-        return round(a * a)
+        return round(a * b)
       }
     }
     function divide (a) {
@@ -267,8 +267,8 @@ VIEW
     document.querySelector('#display').textContent = this.formatNumber(model.subtotal.get() + '')
   }
   function formatNumber (string) {
-    return (Math.abs(string) > 999999999)
-    ? ((+string).toExponential(5) + '').replace(/\.*0*e\+/, 'e')
+    return (/e/.test(string) || +string > 999999999)
+    ? ((+string).toExponential(5) + '').replace(/\.*0*e/, 'e')
     : string.split('.')[0].replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,') +
       ((/\./.test(string) + '').replace(/false/, '') && '.') +
       (string.split('.')[1] || '').replace(/,/g, '')
