@@ -1,3 +1,5 @@
+'strict'
+
 /* **************************************************************************
 CONSTANTS
 *************************************************************************** */
@@ -201,8 +203,7 @@ MODEL
   function evaluatePendingExpression () {
     let operator = this.currentOperator.get()
 
-    if (!operator)
-      return
+    if (!operator) return
 
     this.forkTotal.set(this.forkExpression.evaluate(this.input.get()))
     if (operator === 'add' || operator === 'subtract')
@@ -211,8 +212,7 @@ MODEL
   function setVariables () {
     let operator = this.currentOperator.get()
 
-    if (!operator)
-      return
+    if (!operator) return
 
     if (operator === 'add' || operator === 'subtract') {
       this.mainExpression[operator](this.total.get())
@@ -319,28 +319,25 @@ VIEW
   }
 
   function drawButtonAnimation (target, timeFraction) {
-    let top = window.getComputedStyle(target, null).getPropertyValue('top')
-    let bottom = window.getComputedStyle(target, null).getPropertyValue('bottom')
-    let left = window.getComputedStyle(target, null).getPropertyValue('left')
     let right = window.getComputedStyle(target, null).getPropertyValue('right')
     let fontSize = window.getComputedStyle(target, null).getPropertyValue('font-size')
 
     if (timeFraction < 0.5) {
-      target.style.top = (parseFloat(top) + 1) + 'px'
-      target.style.bottom = (parseFloat(bottom) + 1) + 'px'
-      target.style.left = (parseFloat(left) + 1) + 'px'
+      target.style.top =
+      target.style.bottom =
+      target.style.left =
       target.style.right = (parseFloat(right) + 1) + 'px'
       target.style.fontSize = (parseFloat(fontSize) - 1) + 'px'
     } else if (timeFraction >= 0.5 && timeFraction < 1) {
-      target.style.top = (parseFloat(top) - 1) + 'px'
-      target.style.bottom = (parseFloat(bottom) - 1) + 'px'
-      target.style.left = (parseFloat(left) - 1) + 'px'
+      target.style.top =
+      target.style.bottom =
+      target.style.left =
       target.style.right = (parseFloat(right) - 1) + 'px'
       target.style.fontSize = (parseFloat(fontSize) + 1) + 'px'
     } else {
-      target.style.top = '3%'
-      target.style.bottom = '3%'
-      target.style.left = '3%'
+      target.style.top =
+      target.style.bottom =
+      target.style.left =
       target.style.right = '3%'
       target.style.fontSize = '1rem'
     }
