@@ -289,10 +289,10 @@ VIEW
   }
 
   function respondToOrientation () {
-    if (window.matchMedia('(orientation: landscape)').matches) {
+    if (window.matchMedia('(orientation: landscape)').matches && window.innerWidth <= 1024) {
       this.setShellSize(1.5, '25vh', '16.66%', '100%')
       document.querySelector('#clear').textContent = 'cl'
-    } else if (window.matchMedia('(orientation: portrait)').matches) {
+    } else if (window.matchMedia('(orientation: portrait)').matches || window.innerWidth > 1024) {
       this.setShellSize(0.666, '16.66vh', '25%', '33.33%')
       document.querySelector('#clear').textContent = 'clear'
     }

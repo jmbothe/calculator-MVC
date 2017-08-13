@@ -1,3 +1,7 @@
+/* **************************************************************************
+MOBILE FIRST RULES
+*************************************************************************** */
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -7,11 +11,14 @@
 
 html {
   font-size: 11vw;
+  background-color: hsl(65, 50%, 98%)
 }
 
 body {
   width: 100%;
   height: 100vh;
+  margin: 0 auto;
+  padding: 0;
   font-family: nova mono;
 }
 
@@ -20,7 +27,7 @@ body {
   flex-wrap: wrap;
   align-items: stretch;
   height: 100%;
-  background-color: hsl(60, 50%, 98%)
+  background-color: transparent
 }
 
 .button-container {
@@ -49,7 +56,7 @@ body {
   right: 3%;
   border-radius: 50%;
   box-shadow: 2px 2px 4px #888;
-  background-color: hsl(60, 50%, 98%);
+  background-color: transparent
 }
 
 .operator, #clear, #equals {
@@ -82,10 +89,148 @@ body {
   border: none;
   box-shadow: none;
   justify-content: flex-end;
-  font-size: 1.3rem;
-  letter-spacing: -.07rem
+  font-size: 1.4em;
+  letter-spacing: -.05em
 }
 
 #clear {
   border-radius: 30px;
+}
+
+/* **************************************************************************
+LANDSCAPE / iPAD RULES
+*************************************************************************** */
+
+@media only screen
+and (orientation: landscape)
+and (max-width: 1024px) {
+
+  html {
+    font-size: 9vw;
+  }
+
+  .button-container {
+    width: 16.66%;
+  }
+
+  .button-shell {
+    max-width: 25vh;
+  }
+
+  #display-shell {
+    padding-top: 16.66%;
+  }
+
+  #clear-shell {
+    max-width: 25vh;
+    padding-top: 100%;
+    border-radius: 50%;
+  }
+
+  #display {
+    font-size: 1.7em;
+    letter-spacing: -.05em
+  }
+
+  #clear {
+    border-radius: 50%;
+  }
+
+  #display-container {
+    order: 1;
+  }
+
+  #seven-container {
+    order: 5;
+  }
+
+  #eight-container {
+    order: 6;
+  }
+
+  #nine-container {
+    order: 7;
+  }
+
+  #divide-container {
+    order: 2;
+  }
+
+  #four-container {
+    order: 11;
+  }
+
+  #five-container {
+    order: 12;
+  }
+
+  #six-container {
+    order: 13;
+  }
+
+  #multiply-container {
+    order: 8;
+  }
+
+  #one-container {
+    order: 17;
+  }
+
+  #two-container {
+    order: 18;
+  }
+
+  #three-container {
+    order: 19;
+  }
+
+  #subtract-container {
+    order: 3;
+  }
+
+  #sign-container {
+    order: 4;
+  }
+
+  #zero-container {
+    order: 10;
+  }
+
+  #decimal-container {
+    order: 16;
+  }
+
+  #add-container {
+    order: 9;
+  }
+
+  #clear-container {
+    order: 14;
+    width: 16.66%;
+  }
+
+  #equals-container {
+    order: 15;
+  }
+}
+
+/* **************************************************************************
+DESKTOP RULES
+*************************************************************************** */
+
+@media only screen
+and (min-width: 1025px) {
+
+  html {
+    font-size: 6vw;
+  }
+
+  body {
+    width: 500px;
+  }
+
+  #display {
+    font-size: 1.05em;
+    letter-spacing: -.05em
+  }
 }
