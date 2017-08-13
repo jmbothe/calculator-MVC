@@ -40,19 +40,80 @@ MODEL
   window.calculatorMVC = {}
 
   window.calculatorMVC.model = {
-    input: inputModule(),
-    total: totalModule(),
-    forkTotal: totalModule(),
-    subTotal: totalModule(), // used for view.display purposes only
-    mainExpression: mainExpressionModule(),
-    forkExpression: forkExpressionModule(),
-    currentOperator: operatorModule(),
-    evaluatePendingExpression,
-    setVariables,
     evaluateSubTotal,
+    setTotal,
+    setVariables,
     evaluateEquals,
     clearAfterEquals,
-    clear
+    clear,
+    input: inputModule(),
+    subTotal: totalModule(),
+    mainTotal: totalModule(),
+    forkTotal: totalModule(),
+    mainExpression: mainExpressionModule(),
+    forkExpression: forkExpressionModule(),
+    currentOperator: operatorModule()
+  }
+
+  function evaluateSubTotal () {
+    let operator = this.currentOperator.get()
+
+    if (operator === 'add' || operator === 'subtract' || !operator) {
+      this.subTotal.set(this.mainExpression.evaluate(this.forkExpression.evaluate(this.input.get())))
+    } else if (operator === 'multiply' || operator === 'divide') {
+      this.subTotal.set(this.forkExpression.evaluate(this.input.get()))
+    }
+  }
+
+  function setTotal () {
+    let operator = this.currentOperator.get()
+
+    if (!operator) return
+
+    if (operator === 'add' || operator === 'subtract') {
+      this.mainTotal.set(this.subTotal.get())
+    } else if (operator === 'multiply' || operator === 'divide') {
+      this.forkTotal.set(this.subTotal.get())
+    }
+  }
+
+  function setVariables () {
+    let operator = this.currentOperator.get()
+
+    if (!operator) return
+
+    if (operator === 'add' || operator === 'subtract') {
+      this.mainExpression[operator](this.mainTotal.get())
+      this.forkExpression.reset()
+    } else if (operator === 'multiply' || operator === 'divide') {
+      this.forkExpression[operator](this.forkTotal.get())
+    }
+    this.currentOperator.reset()
+    this.input.reset()
+  }
+
+  function evaluateEquals () {
+    this.mainTotal.set(this.subTotal.get())
+    this.input.setToTotal.apply(this)
+    this.mainExpression.reset()
+    this.forkExpression.reset()
+    this.currentOperator.reset()
+  }
+
+  function clearAfterEquals () {
+    if (this.mainTotal.get() == this.input.get() && !this.currentOperator.get()) {
+      this.input.reset()
+      this.mainTotal.set(undefined)
+    }
+  }
+
+  function clear () {
+    this.input.reset()
+    this.mainExpression.reset()
+    this.forkExpression.reset()
+    this.currentOperator.reset()
+    this.forkTotal.set(undefined)
+    this.mainTotal.set(undefined)
   }
 
   function totalModule () {
@@ -62,9 +123,13 @@ MODEL
       return total
     }
     function set (number) {
-      total = (/\./.test(number + ''))
-        ? round(number, 9 - (number + '').indexOf('.'))
-        : number
+      if (/\./.test(number + '') && /-/.test(number + '')) {
+        total = round(number, 10 - (number + '').indexOf('.'))
+      } else if (/\./.test(number + '')) {
+        total = round(number, 9 - (number + '').indexOf('.'))
+      } else {
+        total = number
+      }
     }
     return {get: get, set: set}
   }
@@ -90,7 +155,7 @@ MODEL
       }
     }
     function setToTotal () {
-      input = this.total.get() + ''
+      input = this.mainTotal.get() + ''
     }
     function reset () {
       input = '0'
@@ -146,14 +211,10 @@ MODEL
       expression = a => +a
     }
     function add (a) {
-      expression = function (b) {
-        return round(a + +b)
-      }
+      expression = b => round(a + +b)
     }
     function subtract (a) {
-      expression = function (b) {
-        return round(a - b)
-      }
+      expression = b => round(a - b)
     }
     return {
       evaluate,
@@ -173,14 +234,10 @@ MODEL
       expression = a => +a
     }
     function multiply (a) {
-      expression = function (b) {
-        return round(a * b)
-      }
+      expression = b => round(a * b)
     }
     function divide (a) {
-      expression = function (b) {
-        return round(a / b)
-      }
+      expression = b => round(a / b)
     }
     return {
       evaluate,
@@ -188,65 +245,6 @@ MODEL
       multiply,
       divide
     }
-  }
-
-  function evaluateSubTotal () {
-    let operator = this.currentOperator.get()
-
-    if (operator === 'add' || operator === 'subtract' || !operator) {
-      this.subTotal.set(this.mainExpression.evaluate(this.forkExpression.evaluate(this.input.get())))
-    } else if (operator === 'multiply' || operator === 'divide') {
-      this.subTotal.set(this.forkExpression.evaluate(this.input.get()))
-    }
-  }
-
-  function evaluatePendingExpression () {
-    let operator = this.currentOperator.get()
-
-    if (!operator) return
-
-    this.forkTotal.set(this.forkExpression.evaluate(this.input.get()))
-    if (operator === 'add' || operator === 'subtract')
-      this.total.set(this.mainExpression.evaluate(this.forkTotal.get()))
-  }
-  function setVariables () {
-    let operator = this.currentOperator.get()
-
-    if (!operator) return
-
-    if (operator === 'add' || operator === 'subtract') {
-      this.mainExpression[operator](this.total.get())
-      this.forkExpression.reset()
-    } else if (operator === 'multiply' || operator === 'divide') {
-      this.forkExpression[operator](this.forkTotal.get())
-    }
-    this.currentOperator.reset()
-    this.input.reset()
-  }
-
-  function evaluateEquals () {
-    this.forkTotal.set(this.forkExpression.evaluate(this.input.get()))
-    this.total.set(this.mainExpression.evaluate(this.forkTotal.get()))
-    this.input.setToTotal.apply(this)
-    this.mainExpression.reset()
-    this.forkExpression.reset()
-    this.currentOperator.reset()
-  }
-
-  function clearAfterEquals () {
-    if (this.total.get() == this.input.get() && !this.currentOperator.get()) {
-      this.input.reset()
-      this.total.set(undefined)
-    }
-  }
-
-  function clear () {
-    this.input.reset()
-    this.mainExpression.reset()
-    this.forkExpression.reset()
-    this.currentOperator.reset()
-    this.forkTotal.set(undefined)
-    this.total.set(undefined)
   }
 })(window);
 
@@ -266,13 +264,16 @@ VIEW
     animateButton
   }
   function displayInput () {
-    document.querySelector('#display').textContent = this.formatNumber(model.input.get())
+    document.querySelector('#display').textContent =
+    this.formatNumber(model.input.get())
   }
   function displayTotal () {
-    document.querySelector('#display').textContent = this.formatNumber(model.total.get() + '')
+    document.querySelector('#display').textContent =
+    this.formatNumber(model.mainTotal.get() + '')
   }
   function displaySubTotal () {
-    document.querySelector('#display').textContent = this.formatNumber(model.subTotal.get() + '')
+    document.querySelector('#display').textContent =
+    this.formatNumber(model.subTotal.get() + '')
   }
 
   function formatNumber (string) {
@@ -323,21 +324,15 @@ VIEW
     let fontSize = window.getComputedStyle(target, null).getPropertyValue('font-size')
 
     if (timeFraction < 0.5) {
-      target.style.top =
-      target.style.bottom =
-      target.style.left =
+      target.style.top = target.style.bottom = target.style.left =
       target.style.right = (parseFloat(right) + 1) + 'px'
       target.style.fontSize = (parseFloat(fontSize) - 1) + 'px'
     } else if (timeFraction >= 0.5 && timeFraction < 1) {
-      target.style.top =
-      target.style.bottom =
-      target.style.left =
+      target.style.top = target.style.bottom = target.style.left =
       target.style.right = (parseFloat(right) - 1) + 'px'
       target.style.fontSize = (parseFloat(fontSize) + 1) + 'px'
     } else {
-      target.style.top =
-      target.style.bottom =
-      target.style.left =
+      target.style.top = target.style.bottom = target.style.left =
       target.style.right = '3%'
       target.style.fontSize = '1rem'
     }
@@ -352,8 +347,7 @@ VIEW
 
       draw(target, timeFraction)
 
-      if (timeFraction < 1)
-        requestAnimationFrame(animate)
+      if (timeFraction < 1) requestAnimationFrame(animate)
     })
   }
 })(window, window.calculatorMVC.model);
@@ -367,17 +361,20 @@ CONTROLLER
     initialize,
     numbersHandler,
     operatorsHandler,
-    generalKeyListener,
+    equalsHandler,
+    clearHandler,
+    keydownListener,
     numbersClickListener,
     operatorsClickListener,
     clearClickListener,
     equalsClickListener,
     resizeListener
   }
+
   function initialize () {
     view.displayInput()
     view.respondToOrientation()
-    this.generalKeyListener()
+    this.keydownListener()
     this.numbersClickListener()
     this.operatorsClickListener()
     this.clearClickListener()
@@ -389,10 +386,11 @@ CONTROLLER
     let keyTarget = document.querySelector('#' + NUM_KEY_MAP[e.key])
 
     model.clearAfterEquals()
-    model.evaluatePendingExpression()
+    model.setTotal()
     model.setVariables()
 
-    if ((e.target.id === 'decimal' || keyTarget === '#decimal') && /\./.test(model.input.get()))
+    if ((e.target.id === 'decimal' || keyTarget === '#decimal') &&
+    /\./.test(model.input.get()))
       return
 
     if (e.target.id === 'sign') {
@@ -414,45 +412,52 @@ CONTROLLER
     view.animateButton(keyTarget || e.target, view.drawButtonAnimation, 100)
   }
 
-  function generalKeyListener () {
-    window.addEventListener('keydown', function listen (e) {
-      let keyTarget = document.querySelector('#' + OTHER_KEY_MAP[e.key])
+  function equalsHandler (e) {
+    let keyTarget = document.querySelector('#' + OTHER_KEY_MAP[e.key])
 
+    model.evaluateSubTotal()
+    model.evaluateEquals()
+    view.displayTotal()
+    view.animateButton(keyTarget || e.target, view.drawButtonAnimation, 100)
+  }
+
+  function clearHandler (e) {
+    let keyTarget = document.querySelector('#' + OTHER_KEY_MAP[e.key])
+
+    model.clear()
+    view.displayInput()
+    view.animateButton(keyTarget || e.target, view.drawButtonAnimation, 100)
+  }
+
+  function keydownListener () {
+    window.addEventListener('keydown', function listen (e) {
       if (NUM_KEY_MAP.hasOwnProperty(e.key)) {
         this.numbersHandler(e)
       } else if (OPERATOR_KEY_MAP.hasOwnProperty(e.key)) {
         this.operatorsHandler(e)
       } else if (e.key === 'Enter') {
-        model.evaluateEquals()
-        view.displayTotal()
-        view.animateButton(keyTarget, view.drawButtonAnimation, 100)
+        this.equalsHandler(e)
       } else if (e.key === 'Backspace' || e.key === 'Delete') {
-        model.clear()
-        view.displayInput()
-        view.animateButton(keyTarget, view.drawButtonAnimation, 100)
+        this.clearHandler(e)
       }
     }.bind(this))
   }
 
   function numbersClickListener () {
-    document.querySelectorAll('.number').forEach(function listen (item) { item.addEventListener('click', this.numbersHandler) }, this)
+    document.querySelectorAll('.number').forEach(function listen (item) {
+      item.addEventListener('click', this.numbersHandler)
+    }, this)
   }
   function operatorsClickListener () {
-    document.querySelectorAll('.operator').forEach(function listen (item) { item.addEventListener('click', this.operatorsHandler) }, this)
+    document.querySelectorAll('.operator').forEach(function listen (item) {
+      item.addEventListener('click', this.operatorsHandler)
+    }, this)
   }
   function equalsClickListener () {
-    document.querySelector('#equals').addEventListener('click', function listen (e) {
-      model.evaluateEquals()
-      view.displayTotal()
-      view.animateButton(e.target, view.drawButtonAnimation, 100)
-    })
+    document.querySelector('#equals').addEventListener('click', this.equalsHandler)
   }
   function clearClickListener () {
-    document.querySelector('#clear').addEventListener('click', function listen (e) {
-      model.clear()
-      view.displayInput()
-      view.animateButton(e.target, view.drawButtonAnimation, 100)
-    })
+    document.querySelector('#clear').addEventListener('click', this.clearHandler)
   }
   function resizeListener () {
     window.addEventListener('resize', view.respondToOrientation.bind(view))
