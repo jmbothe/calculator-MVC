@@ -43,66 +43,77 @@ MODEL
     clearAfterEquals,
     clear,
     round,
+    buildInput,
     input: inputModule(),
     subtotal: subtotalModule(),
     operator: operatorModule(),
-    addOrSubtract: expressionModule(),
-    divide: expressionModule('/'),
-    multiply: expressionModule('*')
+    lowPrecedenceExpression: expressionModule(),
+    midPrecedenceExpression: expressionModule('/'),
+    highPrecedenceExpression: expressionModule('*')
   }
 
-  function evaluateSubtotal ({input, subtotal, operator, addOrSubtract, divide, multiply}) {
-    if (operator.isLowPrecedence()) {
-      subtotal.set.call(this, addOrSubtract.evaluate(divide.evaluate(multiply.evaluate(input.get()))))
-    } else if (operator.isMidPrecedence()) {
-      subtotal.set.call(this, divide.evaluate(multiply.evaluate(input.get())))
-    } else if (operator.isHighPrecedence()) {
-      subtotal.set.call(this, multiply.evaluate(input.get()))
+  function evaluateSubtotal () {
+    if (this.operator.isLowPrecedence()) {
+      this.subtotal.set
+        .call(this, this.lowPrecedenceExpression
+          .evaluate(this.midPrecedenceExpression
+            .evaluate(this.highPrecedenceExpression
+              .evaluate(this.input.get()))))
+    } else if (this.operator.isMidPrecedence()) {
+      this.subtotal.set
+        .call(this, this.midPrecedenceExpression
+          .evaluate(this.highPrecedenceExpression
+            .evaluate(this.input.get())))
+    } else if (this.operator.isHighPrecedence()) {
+      this.subtotal.set
+        .call(this, this.highPrecedenceExpression
+          .evaluate(this.input.get()))
     }
   }
 
-  function setVariables ({input, subtotal, operator, addOrSubtract, divide, multiply}) {
-    if (operator.isNotDefined()) {
+  function setVariables () {
+    if (this.operator.isNotDefined()) {
       return
-    } else if (operator.isLowPrecedence()) {
-      addOrSubtract.curry.call(this, subtotal.get(), operator.get())
-      divide.reset()
-      multiply.reset()
-    } else if (operator.isMidPrecedence()) {
-      divide.curry.call(this, subtotal.get())
-      multiply.reset()
-    } else if (operator.isHighPrecedence()) {
-      multiply.curry.call(this, subtotal.get())
+    } else if (this.operator.isLowPrecedence()) {
+      this.lowPrecedenceExpression.curry
+        .call(this, this.subtotal.get(), this.operator.get())
+      this.midPrecedenceExpression.reset()
+      this.highPrecedenceExpression.reset()
+    } else if (this.operator.isMidPrecedence()) {
+      this.midPrecedenceExpression.curry.call(this, this.subtotal.get())
+      this.highPrecedenceExpression.reset()
+    } else if (this.operator.isHighPrecedence()) {
+      this.highPrecedenceExpression.curry.call(this, this.subtotal.get())
     }
-    operator.reset()
-    input.reset()
+    this.operator.reset()
+    this.input.reset()
   }
 
-  function evaluateTotal ({input, subtotal, operator, addOrSubtract, divide, multiply}) {
-    input.setToSubtotal.call(this)
-    addOrSubtract.reset()
-    divide.reset()
-    multiply.reset()
-    operator.reset()
+  function evaluateTotal () {
+    this.input.setToSubtotal.call(this)
+    this.lowPrecedenceExpression.reset()
+    this.midPrecedenceExpression.reset()
+    this.highPrecedenceExpression.reset()
+    this.operator.reset()
   }
 
-  function clearAfterEquals ({input, subtotal, operator}) {
+  function clearAfterEquals () {
     let userTrynaEnterNumbersAfterLastButtonPressWasEqualsBETTERrESETtHATsHIT =
-      subtotal.get() == input.get() && operator.isNotDefined()
+      this.subtotal.get() == this.input.get() && this.operator.isNotDefined()
 
     if (userTrynaEnterNumbersAfterLastButtonPressWasEqualsBETTERrESETtHATsHIT) {
-      input.reset()
-      subtotal.reset()
+      this.input.reset()
+      this.subtotal.reset()
     }
   }
 
-  function clear ({input, subtotal, operator, addOrSubtract, divide, multiply}) {
-    input.reset()
-    addOrSubtract.reset()
-    divide.reset()
-    multiply.reset()
-    operator.reset()
-    subtotal.reset()
+  function clear () {
+    this.input.reset()
+    this.lowPrecedenceExpression.reset()
+    this.midPrecedenceExpression.reset()
+    this.highPrecedenceExpression.reset()
+    this.operator.reset()
+    this.subtotal.reset()
   }
 
   function round (number) {
@@ -120,6 +131,21 @@ MODEL
       return +(Math.round(number + 'e' + posPlaces) + 'e-' + posPlaces)
     } else {
       return number
+    }
+  }
+
+  function buildInput (char) {
+    let charIsDecimal = char === '.'
+    let charIsSign = char === 'sign'
+
+    if (this.input.hasDecimal() && charIsDecimal) {
+      return
+    } else if (charIsSign) {
+      this.input.changeSign()
+      return
+    } else {
+      this.input.addCharEnd(char)
+      this.input.trimLeadingZeros()
     }
   }
 
@@ -259,29 +285,33 @@ VIEW
     drawButtonAnimation,
     animateButton
   }
+
   function display (number) {
-    document.querySelector('#display').textContent = this.formatNumber(number + '')
+    document.querySelector('#display').textContent =
+      this.formatNumber(number + '')
   }
 
   function formatNumber (string) {
-    let largeThreshold = 999999999
-    let smallThreshold = 0.000001
-    let stringAbs = Math.abs(+string)
     let excedesThresholds =
-      stringAbs > largeThreshold || (stringAbs < smallThreshold && stringAbs > 0)
+      Math.abs(+string) > 999999999 ||
+      Math.abs(+string) < 0.000001 && Math.abs(+string) > 0
 
     return (excedesThresholds)
-      ? ((+string).toExponential(5) + '').replace(/\.*0*e/, 'e').replace(/\+/, '')
+      ? ((+string).toExponential(5) + '')
+          .replace(/\.*0*e/, 'e')
+            .replace(/\+/, '')
       : string.split('.')[0].replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,') +
-        ((/\./.test(string) + '').replace(/false/, '') && '.') +
-        (string.split('.')[1] || '').replace(/,/g, '')
+          ((/\./.test(string) + '').replace(/false/, '') && '.') +
+            (string.split('.')[1] || '')
   }
 
   function respondToOrientation () {
     let shouldBeLandscape =
-      window.matchMedia('(orientation: landscape)').matches && window.innerWidth <= 1024
+      window.matchMedia('(orientation: landscape)').matches &&
+        window.innerWidth <= 1024
     let shouldBePortrait =
-      window.matchMedia('(orientation: portrait)').matches || window.innerWidth > 1024
+      window.matchMedia('(orientation: portrait)').matches ||
+        window.innerWidth > 1024
 
     if (shouldBeLandscape) {
       this.setShellSize(1.5, '25vh', '16.66%', '100%')
@@ -380,21 +410,11 @@ CONTROLLER
 
   function numbersHandler (e) {
     let keyTarget = document.querySelector('#' + NUM_KEY_MAP[e.key])
-    let shouldntAddAnotherDecimal =
-      (e.target.id === 'decimal' || keyTarget === '#decimal') &&
-      /\./.test(model.input.get())
+    let char = e.key || e.target.dataset.content
 
-    model.clearAfterEquals(model)
-    model.setVariables(model)
-
-    if (shouldntAddAnotherDecimal) {
-      return
-    } else if (e.target.id === 'sign') {
-      model.input.changeSign()
-    } else {
-      model.input.addCharEnd(e.key || e.target.textContent)
-      model.input.trimLeadingZeros()
-    }
+    model.clearAfterEquals()
+    model.setVariables()
+    model.buildInput(char)
     view.display(model.input.get())
     view.animateButton(keyTarget || e.target, view.drawButtonAnimation, 100)
   }
@@ -403,7 +423,7 @@ CONTROLLER
     let keyTarget = document.querySelector('#' + OPERATOR_KEY_MAP[e.key])
 
     model.operator.set(e.key || e.target.dataset.operator)
-    model.evaluateSubtotal(model)
+    model.evaluateSubtotal()
     view.display(model.subtotal.get())
     view.animateButton(keyTarget || e.target, view.drawButtonAnimation, 100)
   }
@@ -411,8 +431,8 @@ CONTROLLER
   function equalsHandler (e) {
     let keyTarget = document.querySelector('#' + OTHER_KEY_MAP[e.key])
 
-    model.evaluateSubtotal(model)
-    model.evaluateTotal(model)
+    model.evaluateSubtotal()
+    model.evaluateTotal()
     view.display(model.input.get())
     view.animateButton(keyTarget || e.target, view.drawButtonAnimation, 100)
   }
@@ -420,7 +440,7 @@ CONTROLLER
   function clearHandler (e) {
     let keyTarget = document.querySelector('#' + OTHER_KEY_MAP[e.key])
 
-    model.clear(model)
+    model.clear()
     view.display(model.input.get())
     view.animateButton(keyTarget || e.target, view.drawButtonAnimation, 100)
   }
