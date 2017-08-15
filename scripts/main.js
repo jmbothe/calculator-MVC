@@ -4,23 +4,6 @@
 CONSTANTS
 *************************************************************************** */
 
-const round = function (number) {
-  let isExponentialForm = /e/.test(number + '')
-  let isNegativeDecimal = /\./.test(number + '') && /^-/.test(number + '')
-  let negPlaces = 10 - (number + '').indexOf('.')
-  let isPositiveDecimal = /\./.test(number + '')
-  let posPlaces = 9 - (number + '').indexOf('.')
-
-  if (isExponentialForm) {
-    return number
-  } else if (isNegativeDecimal) {
-    return +(Math.round(number + 'e' + negPlaces) + 'e-' + negPlaces)
-  } else if (isPositiveDecimal) {
-    return +(Math.round(number + 'e' + posPlaces) + 'e-' + posPlaces)
-  } else {
-    return number
-  }
-}
 const NUM_KEY_MAP = {
   0: 'zero',
   1: 'one',
@@ -54,84 +37,103 @@ MODEL
   window.calculatorMVC = {}
 
   window.calculatorMVC.model = {
-    evaluateTotal,
+    evaluateSubtotal,
     setVariables,
-    evaluateEquals,
+    evaluateTotal,
     clearAfterEquals,
     clear,
+    round,
     input: inputModule(),
-    total: totalModule(),
+    subtotal: subtotalModule(),
     operator: operatorModule(),
     addOrSubtract: expressionModule(),
     divide: expressionModule('/'),
     multiply: expressionModule('*')
   }
 
-  function evaluateTotal ({input, total, operator, addOrSubtract, divide, multiply}) {
+  function evaluateSubtotal ({input, subtotal, operator, addOrSubtract, divide, multiply}) {
     if (operator.isLowPrecedence()) {
-      total.set(addOrSubtract.evaluate(divide.evaluate(multiply.evaluate(input.get()))))
+      subtotal.set.call(this, addOrSubtract.evaluate(divide.evaluate(multiply.evaluate(input.get()))))
     } else if (operator.isMidPrecedence()) {
-      total.set(divide.evaluate(multiply.evaluate(input.get())))
+      subtotal.set.call(this, divide.evaluate(multiply.evaluate(input.get())))
     } else if (operator.isHighPrecedence()) {
-      total.set(multiply.evaluate(input.get()))
+      subtotal.set.call(this, multiply.evaluate(input.get()))
     }
   }
 
-  function setVariables ({input, total, operator, addOrSubtract, divide, multiply}) {
+  function setVariables ({input, subtotal, operator, addOrSubtract, divide, multiply}) {
     if (operator.isNotDefined()) {
       return
     } else if (operator.isLowPrecedence()) {
-      addOrSubtract.curry(total.get(), operator.get())
+      addOrSubtract.curry.call(this, subtotal.get(), operator.get())
       divide.reset()
       multiply.reset()
     } else if (operator.isMidPrecedence()) {
-      divide.curry(total.get())
+      divide.curry.call(this, subtotal.get())
       multiply.reset()
     } else if (operator.isHighPrecedence()) {
-      multiply.curry(total.get())
+      multiply.curry.call(this, subtotal.get())
     }
     operator.reset()
     input.reset()
   }
 
-  function evaluateEquals ({input, total, operator, addOrSubtract, divide, multiply}) {
-    input.setToTotal.call(this)
+  function evaluateTotal ({input, subtotal, operator, addOrSubtract, divide, multiply}) {
+    input.setToSubtotal.call(this)
     addOrSubtract.reset()
     divide.reset()
     multiply.reset()
     operator.reset()
   }
 
-  function clearAfterEquals ({input, total, operator}) {
+  function clearAfterEquals ({input, subtotal, operator}) {
     let userTrynaEnterNumbersAfterLastButtonPressWasEqualsBETTERrESETtHATsHIT =
-      total.get() == input.get() && operator.isNotDefined()
+      subtotal.get() == input.get() && operator.isNotDefined()
 
     if (userTrynaEnterNumbersAfterLastButtonPressWasEqualsBETTERrESETtHATsHIT) {
       input.reset()
-      total.reset()
+      subtotal.reset()
     }
   }
 
-  function clear ({input, total, operator, addOrSubtract, divide, multiply}) {
+  function clear ({input, subtotal, operator, addOrSubtract, divide, multiply}) {
     input.reset()
     addOrSubtract.reset()
     divide.reset()
     multiply.reset()
     operator.reset()
-    total.reset()
+    subtotal.reset()
   }
 
-  function totalModule () {
-    let total
+  function round (number) {
+    let isExponentialForm = /e/.test(number + '')
+    let isNegativeDecimal = /\./.test(number + '') && /^-/.test(number + '')
+    let negPlaces = 10 - (number + '').indexOf('.')
+    let isPositiveDecimal = /\./.test(number + '')
+    let posPlaces = 9 - (number + '').indexOf('.')
+
+    if (isExponentialForm) {
+      return number
+    } else if (isNegativeDecimal) {
+      return +(Math.round(number + 'e' + negPlaces) + 'e-' + negPlaces)
+    } else if (isPositiveDecimal) {
+      return +(Math.round(number + 'e' + posPlaces) + 'e-' + posPlaces)
+    } else {
+      return number
+    }
+  }
+
+  function subtotalModule () {
+    let subtotal
 
     function get () {
-      return total
+      return subtotal
     }
     function set (number) {
-      total = round(number)
+      subtotal = this.round(number)
     }
     function reset () {
-      total = undefined
+      subtotal = undefined
     }
     return {get, set, reset}
   }
@@ -142,42 +144,54 @@ MODEL
     function get () {
       return input
     }
-    function addCharEnd (char) {
-      let isNotMaxLength = (/\d|\./.test(char) && input.match(/\d/g).length < 9)
-      if (isNotMaxLength) input += char
-    }
-    function changeSign () {
-      let isPositive = !(/-/.test(input))
-      input = isPositive ? '-' + input : input.substring(1)
-    }
-    function trimLeadingZeros () {
-      let hasDecimal = /\./.test(input)
-      let positiveWithLeadingZero =
-        input.indexOf('0') === 0 && input.length > 1
-      let negativeWithLeadingZero =
-        /^-0/.test(input) && input.length > 2
-
-      if (hasDecimal) {
-        return
-      } else if (positiveWithLeadingZero) {
-        input = input.substring(1)
-      } else if (negativeWithLeadingZero) {
-        input = '-' + input.substring(2)
-      }
-    }
-    function setToTotal () {
-      input = this.total.get() + ''
+    function setToSubtotal () {
+      input = this.subtotal.get() + ''
     }
     function reset () {
       input = '0'
     }
+    function addCharEnd (char) {
+      if (this.isNotMaxLength()) input += char
+    }
+    function isNotMaxLength () {
+      return input.match(/\d/g).length < 9
+    }
+    function changeSign () {
+      input = this.isPositive() ? '-' + input : input.substring(1)
+    }
+    function isPositive () {
+      return !(/-/.test(input))
+    }
+    function trimLeadingZeros () {
+      if (this.hasDecimal()) {
+        return
+      } else if (this.hasPositiveLeadingZero()) {
+        input = input.substring(1)
+      } else if (this.hasNegativeLeadingZero()) {
+        input = '-' + input.substring(2)
+      }
+    }
+    function hasDecimal () {
+      return /\./.test(input)
+    }
+    function hasPositiveLeadingZero () {
+      return /^0/.test(input)
+    }
+    function hasNegativeLeadingZero () {
+      return /^-0/.test(input) && input.length > 2
+    }
     return {
       get,
+      setToSubtotal,
+      reset,
       addCharEnd,
+      isNotMaxLength,
       changeSign,
+      isPositive,
       trimLeadingZeros,
-      setToTotal,
-      reset
+      hasDecimal,
+      hasPositiveLeadingZero,
+      hasNegativeLeadingZero
     }
   }
 
@@ -190,17 +204,8 @@ MODEL
     function reset () {
       operator = ''
     }
-    function add () {
-      operator = '+'
-    }
-    function subtract () {
-      operator = '-'
-    }
-    function multiply () {
-      operator = '*'
-    }
-    function divide () {
-      operator = '/'
+    function set (symbol) {
+      operator = symbol
     }
     function isLowPrecedence () {
       return (operator === '+' || operator === '-' || !operator)
@@ -216,11 +221,8 @@ MODEL
     }
     return {
       get,
+      set,
       reset,
-      add,
-      subtract,
-      multiply,
-      divide,
       isLowPrecedence,
       isMidPrecedence,
       isHighPrecedence,
@@ -238,7 +240,7 @@ MODEL
       expression = a => +a
     }
     function curry (a, operator = defaultOperator) {
-      expression = b => round(eval(a + operator + b))
+      expression = b => this.round(eval(a + operator + b))
     }
     return {evaluate, reset, curry}
   }
@@ -400,18 +402,18 @@ CONTROLLER
   function operatorsHandler (e) {
     let keyTarget = document.querySelector('#' + OPERATOR_KEY_MAP[e.key])
 
-    model.operator[OPERATOR_KEY_MAP[e.key] || e.target.id]()
-    model.evaluateTotal(model)
-    view.display(model.total.get())
+    model.operator.set(e.key || e.target.dataset.operator)
+    model.evaluateSubtotal(model)
+    view.display(model.subtotal.get())
     view.animateButton(keyTarget || e.target, view.drawButtonAnimation, 100)
   }
 
   function equalsHandler (e) {
     let keyTarget = document.querySelector('#' + OTHER_KEY_MAP[e.key])
 
+    model.evaluateSubtotal(model)
     model.evaluateTotal(model)
-    model.evaluateEquals(model)
-    view.display(model.total.get())
+    view.display(model.input.get())
     view.animateButton(keyTarget || e.target, view.drawButtonAnimation, 100)
   }
 
