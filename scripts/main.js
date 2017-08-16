@@ -47,28 +47,17 @@ MODEL
     input: inputModule(),
     subtotal: subtotalModule(),
     operator: operatorModule(),
-    lowPrecedenceExpression: expressionModule(),
-    midPrecedenceExpression: expressionModule('/'),
-    highPrecedenceExpression: expressionModule('*')
+    lowPrecedenceExpression: expressionModule('isLowPrecedence'),
+    midPrecedenceExpression: expressionModule('isMidPrecedence', '/'),
+    highPrecedenceExpression: expressionModule('isHighPrecedence', '*')
   }
 
   function evaluateSubtotal () {
-    if (this.operator.isLowPrecedence()) {
-      this.subtotal.set
-        .call(this, this.lowPrecedenceExpression
-          .evaluate(this.midPrecedenceExpression
-            .evaluate(this.highPrecedenceExpression
-              .evaluate(this.input.get()))))
-    } else if (this.operator.isMidPrecedence()) {
-      this.subtotal.set
-        .call(this, this.midPrecedenceExpression
-          .evaluate(this.highPrecedenceExpression
-            .evaluate(this.input.get())))
-    } else if (this.operator.isHighPrecedence()) {
-      this.subtotal.set
-        .call(this, this.highPrecedenceExpression
-          .evaluate(this.input.get()))
-    }
+    this.subtotal.set
+      .call(this, this.lowPrecedenceExpression
+      .evaluate.call(this, this.midPrecedenceExpression
+      .evaluate.call(this, this.highPrecedenceExpression
+      .evaluate.call(this, this.input.get()))))
   }
 
   function setVariables () {
@@ -77,8 +66,8 @@ MODEL
     } else if (this.operator.isLowPrecedence()) {
       this.lowPrecedenceExpression.curry
         .call(this, this.subtotal.get(), this.operator.get())
-      this.midPrecedenceExpression.reset()
       this.highPrecedenceExpression.reset()
+      this.midPrecedenceExpression.reset()
     } else if (this.operator.isMidPrecedence()) {
       this.midPrecedenceExpression.curry.call(this, this.subtotal.get())
       this.highPrecedenceExpression.reset()
@@ -237,10 +226,10 @@ MODEL
       return (operator === '+' || operator === '-' || !operator)
     }
     function isMidPrecedence () {
-      return (operator === '/')
+      return (operator === '+' || operator === '-' || !operator || operator === '/')
     }
     function isHighPrecedence () {
-      return (operator === '*')
+      return (operator === '+' || operator === '-' || !operator || operator === '/' || operator === '*')
     }
     function isNotDefined () {
       return (!operator)
@@ -256,11 +245,15 @@ MODEL
     }
   }
 
-  function expressionModule (defaultOperator) {
+  function expressionModule (precedence, defaultOperator) {
     let expression = a => +a
 
     function evaluate (number) {
-      return expression(number)
+      if (this.operator[precedence]()) {
+        return expression(number)
+      } else {
+        return +number
+      }
     }
     function reset () {
       expression = a => +a
