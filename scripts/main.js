@@ -1,8 +1,8 @@
 'strict';
 
-/* **************************************************************************
-CONSTANTS
-*************************************************************************** */
+/**
+* CONSTANTS
+*/
 
 const NUM_KEY_MAP = {
   0: 'zero',
@@ -29,11 +29,24 @@ const OTHER_KEY_MAP = {
   Delete: 'clear',
 };
 
-/* **************************************************************************
-MODEL
-*************************************************************************** */
+/*
+* MODEL
+*/
 
 ((function makeModel() {
+  /**
+  * evaluateSubtotal() passes the current input through all mathematical
+  * function expressions that are of equal or higher precedence than
+  * the most recent user-selected mathematical operator.
+  * if higher-precedence functions do not contain any outstanding
+  * expression(s) waiting to be evaluated, they simply return the input.
+  *
+  * This setup allows the calculator to follow the order of operations by
+  * suspending lower-precedence operators and their operands within curried
+  * functions, to be evaluated once higher-precedence operations are complete.
+  * It also allows for the display of alternative subtotals
+  * in the event that the user consecutively selects different operators.
+  */
   function evaluateSubtotal() {
     if (this.operator.isLowPrecedence()) {
       this.subtotal.set
@@ -53,6 +66,12 @@ MODEL
     }
   }
 
+  /**
+  * setVariables() passes the current subtotal to the appropriate
+  * function expression (based on the most recent user-selected operator),
+  * resets all higher-precedence function expressions,
+  * and resets operator and input values
+  */
   function setVariables() {
     if (this.operator.isNotDefined()) {
       return;
@@ -80,10 +99,10 @@ MODEL
   }
 
   function clearAfterEquals() {
-    const userTrynaEnterNumbersAfterLastButtonPressWasEqualsBETTERrESETtHATsHIT =
+    const lastButtonPressedWasEquals =
       this.subtotal.get() == this.input.get() && this.operator.isNotDefined();
 
-    if (userTrynaEnterNumbersAfterLastButtonPressWasEqualsBETTERrESETtHATsHIT) {
+    if (lastButtonPressedWasEquals) {
       this.input.reset();
       this.subtotal.reset();
     }
@@ -101,8 +120,8 @@ MODEL
   function round(number) {
     const isExponentialForm = /e/.test(`${number}`);
     const isNegativeDecimal = /\./.test(`${number}`) && /^-/.test(`${number}`);
-    const negPlaces = 10 - (`${number}`).indexOf('.');
     const isPositiveDecimal = /\./.test(`${number}`);
+    const negPlaces = 10 - (`${number}`).indexOf('.');
     const posPlaces = 9 - (`${number}`).indexOf('.');
 
     if (isExponentialForm) {
@@ -119,13 +138,9 @@ MODEL
     const charIsDecimal = char === '.';
     const charIsSign = char === 'sign';
 
-    if (this.input.hasDecimal() && charIsDecimal) {
-      return;
-    }
-
     if (charIsSign) {
       this.input.changeSign();
-    } else {
+    } else if ((!this.input.hasDecimal() && charIsDecimal) || !charIsDecimal) {
       this.input.addCharEnd(char);
       this.input.trimLeadingZeros();
     }
@@ -161,6 +176,8 @@ MODEL
     function addCharEnd(char) {
       if (this.isNotMaxLength()) input += char;
     }
+
+    // only want the count of numbers, not the entire string length
     function isNotMaxLength() {
       return input.match(/\d/g).length < 9;
     }
@@ -236,21 +253,39 @@ MODEL
     };
   }
 
+  /**
+  * expressionModule() accepts a defaultOperator because, for this calcualtor,
+  * "highPrecedence" only applies to multiplication, and "midPrecedence"
+  * only applies to division. The only operators which share a level
+  * of precedence are addition and subtraction. As such, a default operator
+  * is not provided for the lowPrecedenceExpression instance.
+  *
+  * All this really does is make the evaluateSubtotal() code a bit cleaner
+  */
   function expressionModule(defaultOperator) {
+    // default expression simply returns input value as number
     let expression = a => +a;
 
-    function evaluate(number) {
-      return expression(number);
+    function evaluate(value) {
+      return expression(value);
     }
     function reset() {
       expression = a => +a;
     }
-    function curry(a, operator = defaultOperator) {
-      expression = b => this.round(eval(a + operator + b));
+    /*
+    * curry() stores an operator and an operand which wait until
+    * a second operand is provided to evaluate the expression.
+    *
+    * FIX ME: eval() is bad practice
+    */
+    function curry(firstValue, operator = defaultOperator) {
+      expression = secondValue =>
+        this.round(eval(firstValue + operator + secondValue));
     }
     return { evaluate, reset, curry };
   }
 
+  // App namespace
   window.calculatorMVC = {};
 
   window.calculatorMVC.model = {
@@ -270,9 +305,9 @@ MODEL
   };
 })());
 
-/* **************************************************************************
-VIEW
-*************************************************************************** */
+/*
+* VIEW
+*/
 
 (function makeView() {
   function display(number) {
@@ -281,15 +316,23 @@ VIEW
   }
 
   function formatNumber(number) {
+    const error = number === 'NaN' || number === 'Infinity';
     const string = `${number}`;
     const excedesThresholds =
       Math.abs(+string) > 999999999 ||
       (Math.abs(+string) < 0.000001 && Math.abs(+string) > 0);
 
+    if (error) {
+      return 'Error';
+    }
     return (excedesThresholds)
+
+      // format for better-looking exponential notation
       ? (`${(+string).toExponential(5)}`)
         .replace(/\.*0*e/, 'e')
         .replace(/\+/, '')
+
+      // format to add thousands commas, but not in decimal places, obviously
       : string.split('.')[0].replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,') +
         ((/\./.test(string) && '.') || '') +
         (string.split('.')[1] || '');
@@ -298,10 +341,12 @@ VIEW
   function respondToOrientation() {
     const shouldBeLandscape =
       window.matchMedia('(orientation: landscape)').matches &&
-        window.innerWidth <= 1024;
+      window.innerWidth <= 1024;
+
+    // maintains a portrait orientation on wide laptop/desktop screens
     const shouldBePortrait =
       window.matchMedia('(orientation: portrait)').matches ||
-        window.innerWidth > 1024;
+      window.innerWidth > 1024;
 
     if (shouldBeLandscape) {
       this.setShellSize(1.5, '25vh', '16.66%', '100%');
@@ -312,6 +357,7 @@ VIEW
     }
   }
 
+  // obsessive attempt to maintain circular buttons in a rectangular grid
   function setShellSize(ratio, paddingAll, paddingDisplay, paddingClear) {
     const calculator = document.querySelector('.calculator');
     const buttonShells = document.querySelectorAll('.button-shell');
@@ -335,42 +381,11 @@ VIEW
     }
   }
 
-  function animateButton(target, draw, duration) {
-    const start = performance.now();
-
-    requestAnimationFrame(function animate(time) {
-      let timeFraction = (time - start) / duration;
-      if (timeFraction > 1) timeFraction = 1;
-
-      draw(target, timeFraction);
-
-      if (timeFraction < 1) requestAnimationFrame(animate);
-    });
-  }
-
-  function drawButtonAnimation(target, timeFraction) {
-    const position = window.getComputedStyle(target, null).getPropertyValue('right');
-    const fontSize = window.getComputedStyle(target, null).getPropertyValue('font-size');
-
-    if (timeFraction < 0.5) {
-      target.style.top = `${parseFloat(position) + 1}px`;
-      target.style.bottom = `${parseFloat(position) + 1}px`;
-      target.style.left = `${parseFloat(position) + 1}px`;
-      target.style.right = `${parseFloat(position) + 1}px`;
-      target.style.fontSize = `${parseFloat(fontSize) - 1}px`;
-    } else if (timeFraction >= 0.5 && timeFraction < 1) {
-      target.style.top = `${parseFloat(position) - 1}px`;
-      target.style.bottom = `${parseFloat(position) - 1}px`;
-      target.style.left = `${parseFloat(position) - 1}px`;
-      target.style.right = `${parseFloat(position) - 1}px`;
-      target.style.fontSize = `${parseFloat(fontSize) + 1}px`;
-    } else {
-      target.style.top = '3%';
-      target.style.bottom = '3%';
-      target.style.left = '3%';
-      target.style.right = '3%';
-      target.style.fontSize = '1rem';
-    }
+  function animateButton(target) {
+    target.classList.add('animate');
+    setTimeout(() => {
+      target.classList.remove('animate');
+    }, 100);
   }
 
   window.calculatorMVC.view = {
@@ -378,45 +393,43 @@ VIEW
     formatNumber,
     respondToOrientation,
     setShellSize,
-    drawButtonAnimation,
     animateButton,
   };
 }());
 
-/* **************************************************************************
-CONTROLLER
-*************************************************************************** */
+/*
+* CONTROLLER
+*/
 
 (function makeController(model, view) {
   function initialize() {
     view.display(model.input.get());
     view.respondToOrientation();
-    this.keydownListener();
-    this.numbersClickListener();
-    this.operatorsClickListener();
-    this.clearClickListener();
-    this.equalsClickListener();
-    this.resizeListener();
+    this.setupListeners();
   }
 
+  // numbersHandler() called every time user selects a number
   function numbersHandler(e) {
     const keyTarget = document.querySelector(`#${NUM_KEY_MAP[e.key]}`);
     const char = e.key || e.target.dataset.content;
 
+    // clearAfterEquals does nothing unless last user selection was '='
     model.clearAfterEquals();
+    // setVariables() does nothing unless last user selection was an operator
     model.setVariables();
     model.buildInput(char);
     view.display(model.input.get());
-    view.animateButton(keyTarget || e.target, view.drawButtonAnimation, 100);
+    view.animateButton(keyTarget || e.target);
   }
 
+  // operatorsHandler() called every time user selects a mathematical operator
   function operatorsHandler(e) {
     const keyTarget = document.querySelector(`#${OPERATOR_KEY_MAP[e.key]}`);
 
     model.operator.set(e.key || e.target.dataset.operator);
     model.evaluateSubtotal();
     view.display(model.subtotal.get());
-    view.animateButton(keyTarget || e.target, view.drawButtonAnimation, 100);
+    view.animateButton(keyTarget || e.target);
   }
 
   function equalsHandler(e) {
@@ -425,7 +438,7 @@ CONTROLLER
     model.evaluateSubtotal();
     model.evaluateTotal();
     view.display(model.input.get());
-    view.animateButton(keyTarget || e.target, view.drawButtonAnimation, 100);
+    view.animateButton(keyTarget || e.target);
   }
 
   function clearHandler(e) {
@@ -433,10 +446,10 @@ CONTROLLER
 
     model.clear();
     view.display(model.input.get());
-    view.animateButton(keyTarget || e.target, view.drawButtonAnimation, 100);
+    view.animateButton(keyTarget || e.target);
   }
 
-  function keydownListener() {
+  function setupListeners() {
     window.addEventListener('keydown', (e) => {
       if (NUM_KEY_MAP.hasOwnProperty(e.key)) {
         this.numbersHandler(e);
@@ -448,25 +461,19 @@ CONTROLLER
         this.clearHandler(e);
       }
     });
-  }
 
-  function numbersClickListener() {
     document.querySelectorAll('.number').forEach(function listen(item) {
       item.addEventListener('click', this.numbersHandler);
     }, this);
-  }
-  function operatorsClickListener() {
+
     document.querySelectorAll('.operator').forEach(function listen(item) {
       item.addEventListener('click', this.operatorsHandler);
     }, this);
-  }
-  function equalsClickListener() {
+
     document.querySelector('#equals').addEventListener('click', this.equalsHandler);
-  }
-  function clearClickListener() {
+
     document.querySelector('#clear').addEventListener('click', this.clearHandler);
-  }
-  function resizeListener() {
+
     window.addEventListener('resize', view.respondToOrientation.bind(view));
   }
 
@@ -476,17 +483,12 @@ CONTROLLER
     operatorsHandler,
     equalsHandler,
     clearHandler,
-    keydownListener,
-    numbersClickListener,
-    operatorsClickListener,
-    clearClickListener,
-    equalsClickListener,
-    resizeListener,
+    setupListeners,
   };
 }(window.calculatorMVC.model, window.calculatorMVC.view));
 
-/* **************************************************************************
-INITIALIZE
-*************************************************************************** */
+/*
+* INITIALIZE
+*/
 
 window.calculatorMVC.controller.initialize();

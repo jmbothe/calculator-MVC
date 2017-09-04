@@ -56,7 +56,8 @@ body {
   right: 3%;
   border-radius: 50%;
   box-shadow: 2px 2px 4px #888;
-  background-color: transparent
+  background-color: transparent;
+  transition: 50;
 }
 
 .operator, #clear, #equals {
@@ -95,6 +96,15 @@ body {
 
 #clear {
   border-radius: 30px;
+}
+
+.animate {
+  top: 10%;
+  bottom: 10%;
+  left: 10%;
+  right: 10%;
+  font-size: 9vw;
+  transition: 50;
 }
 
 /* **************************************************************************
@@ -212,6 +222,10 @@ and (max-width: 1024px) {
   #equals-container {
     order: 15;
   }
+
+  .animate {
+    font-size: 7vw;
+  }
 }
 
 /* **************************************************************************
@@ -232,5 +246,9 @@ and (min-width: 1025px) {
   #display {
     font-size: 1.05em;
     letter-spacing: -.05em
+  }
+
+  .animate {
+    font-size: 5vw;
   }
 }
