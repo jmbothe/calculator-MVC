@@ -2,11 +2,11 @@
 ---
 
 #### A learning project focused on leveling-up with:
-* The model/view/controller software architecture pattern.
-* Principles of clean, DRY, self-documenting code.
+* The [model/view/controller](https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller) software architecture pattern.
+* Principles of [clean](https://github.com/ryanmcdermott/clean-code-javascript), [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself), [self-documenting code](https://en.wikipedia.org/wiki/Self-documenting_code).
 * DOM traversal and manipulation.
 * Mobile-first responsive design.
-* Delicious Vanilla JavaScript (DVJS).
+* Delicious [Vanilla JavaScript](http://vanilla-js.com/).
 
 ## Table of Contents
 
@@ -66,7 +66,7 @@ An important part of reducing the complexity of code (and increasing its readabi
 
 ## Contributing
 
-Your contributions are very welcome! Contact me or open an issue to discuss potential changes/additions.
+Your contributions are very welcome! The best thing you could possibly do is break this code and then let me know about it. Contact me or open an issue to discuss potential changes/additions.
 
 <a name="author"/>
 
@@ -76,8 +76,8 @@ Author
 * Jeff Bothe, @jmbothe
 
 Inspiration
-* @tastejs [TodoMVC](https://github.com/tastejs/todomvc)
-* @getify [Scope & Closures](https://github.com/getify/You-Dont-Know-JS/blob/master/scope%20&%20closures/README.md#you-dont-know-js-scope--closures)
+* [TodoMVC](https://github.com/tastejs/todomvc), @tastejs 
+* [Scope & Closures](https://github.com/getify/You-Dont-Know-JS/blob/master/scope%20&%20closures/README.md#you-dont-know-js-scope--closures), Kyle Simpson, @getify
 
 <a name="License"/>
 
