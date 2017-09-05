@@ -75,7 +75,7 @@ Your contributions are very welcome! Contact me or open an issue to discuss pote
 
 #### (The MIT License)
 
-Copyright (c) 2014 Bill Gooch
+Copyright (c) 2017 Jeff Bothe
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
