@@ -26,7 +26,7 @@
 
 ## Description
 
-This calculator was built for personal edification, and is based on two major influences. On the surface, it is an attempt to reverse engineer the basic functionality of the iOS10 calculator (in portrait view). Under the hood, it is an attempt to follow the rudiments of the MVC design pattern laid out in the vanilla JS example of the TodoMVC project.
+This calculator was built for personal edification, and is based on two major influences. On the surface, it is an attempt to reverse engineer the basic functionality of the iOS10 calculator (in portrait view). Under the hood, it is an attempt to follow the rudiments of the MVC design pattern laid out in [the vanilla JS example of the TodoMVC project](http://todomvc.com/examples/vanillajs/).
 
 #### How is this calculator like the basic iOS calculator?
 * It follows the basic order of operations.
@@ -67,7 +67,11 @@ Your contributions are very welcome! Contact me or open an issue to discuss pote
 
 <a name="author"/>
 
-## Author and Credits
+## Author, Credits and Links
+
+Author - Jeff Bothe, @jmbothe
+
+Inspiration - @tastejs [TodoMVC](https://github.com/tastejs/todomvc)
 
 <a name="License"/>
 
