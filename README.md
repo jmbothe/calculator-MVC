@@ -46,7 +46,7 @@ This calculator was built for personal edification, and is based on two major in
 
 ## Highlights and Discussion
 
-### Coding the order of operations with currying and partial application!
+### Coding the order of operations with currying and partial application.
 
 I imagine there are a number of ways to successfully code a set of functions that will handle the basic order of operations, but I wanted to implement something that was new and challenging, so I decided to make currying and partial application central to the functionality of the calculator's model. For those who don't know (or for those who know, but who wish to sit back and enjoy watching a newb struggle to explain succinctly), currying is a technique whereby a function that takes multiple arguments is rewritten as a series of nested functions that each take one argument. Partial application is the related technique of fixing some of the arguments of those nested functions, and returning a new function that takes just the arguments that have yet to be fixed. Currying and partial application allow this calculator to follow the order of operations by suspending the current operator and ONE of its operands within a partially applied function whenever the subsequent operator is of higher precedence. Once the higher-precedence operation is complete, its return value is passed as the final argument to the partially applied function, which then completely evaluates the pending lower-precedence expression. In addition to maintaining the order of operations, this setup also allows for the display of alternative subtotals in the event that the user consecutively selects different operators.
 
@@ -72,9 +72,12 @@ Your contributions are very welcome! Contact me or open an issue to discuss pote
 
 ## Author, Credits and Links
 
-Author - Jeff Bothe, @jmbothe
+Author
+* Jeff Bothe, @jmbothe
 
-Inspiration - @tastejs [TodoMVC](https://github.com/tastejs/todomvc)
+Inspiration
+* @tastejs [TodoMVC](https://github.com/tastejs/todomvc)
+* @getify [Scope & Closures](https://github.com/getify/You-Dont-Know-JS/blob/master/scope%20&%20closures/README.md#you-dont-know-js-scope--closures)
 
 <a name="License"/>
 
