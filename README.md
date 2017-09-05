@@ -1,4 +1,5 @@
-# Calculator-MVC
+![Calc Logo](/assets/logo.jpg)
+---
 
 #### A learning project focused on leveling-up with:
 * The model/view/controller software architecture pattern.
@@ -21,6 +22,8 @@
 ## Demo
 
 [Try it out!](https://jmbothe.github.io/calculator-MVC/)
+
+[![portrait](/assets/portrait.jpg)](https://jmbothe.github.io/calculator-MVC/)
 
 <a name="description"/>
 
