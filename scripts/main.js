@@ -1,34 +1,5 @@
 'strict';
 
-/**
-* CONSTANTS
-*/
-
-const NUM_KEY_MAP = {
-  0: 'zero',
-  1: 'one',
-  2: 'two',
-  3: 'three',
-  4: 'four',
-  5: 'five',
-  6: 'six',
-  7: 'seven',
-  8: 'eight',
-  9: 'nine',
-  '.': 'decimal',
-};
-const OPERATOR_KEY_MAP = {
-  '/': 'divide',
-  '*': 'multiply',
-  '+': 'add',
-  '-': 'subtract',
-};
-const OTHER_KEY_MAP = {
-  Enter: 'equals',
-  Backspace: 'clear',
-  Delete: 'clear',
-};
-
 /*
 * MODEL
 */
@@ -253,15 +224,6 @@ const OTHER_KEY_MAP = {
     };
   }
 
-  /**
-  * expressionModule() accepts a defaultOperator because, for this calcualtor,
-  * "highPrecedence" only applies to multiplication, and "midPrecedence"
-  * only applies to division. The only operators which share a level
-  * of precedence are addition and subtraction. As such, a default operator
-  * is not provided for the lowPrecedenceExpression instance.
-  *
-  * All this really does is make the evaluateSubtotal() code a bit cleaner
-  */
   function expressionModule(defaultOperator) {
     // default expression simply returns input value as number
     let expression = a => +a;
@@ -275,15 +237,20 @@ const OTHER_KEY_MAP = {
     /*
     * partialApply() fixes an operator and an operand which wait until
     * a second operand is provided to evaluate the expression.
-    *
-    * FIX ME: eval() is bad practice
     */
     function partialApply(firstValue, operator = defaultOperator) {
       expression = secondValue =>
-        this.round(eval(firstValue + operator + secondValue));
+        this.round(this.OPERATORS[operator](firstValue, secondValue));
     }
     return { evaluate, reset, partialApply };
   }
+
+  const OPERATORS = {
+    '+': (a, b) => a + b,
+    '-': (a, b) => a - b,
+    '*': (a, b) => a * b,
+    '/': (a, b) => a / b,
+  };
 
   // App namespace
   window.calculatorMVC = {};
@@ -302,6 +269,7 @@ const OTHER_KEY_MAP = {
     lowPrecedenceExpression: expressionModule(),
     midPrecedenceExpression: expressionModule('/'),
     highPrecedenceExpression: expressionModule('*'),
+    OPERATORS,
   };
 })());
 
@@ -402,6 +370,31 @@ const OTHER_KEY_MAP = {
 */
 
 (function makeController(model, view) {
+  const NUM_KEY_MAP = {
+    0: 'zero',
+    1: 'one',
+    2: 'two',
+    3: 'three',
+    4: 'four',
+    5: 'five',
+    6: 'six',
+    7: 'seven',
+    8: 'eight',
+    9: 'nine',
+    '.': 'decimal',
+  };
+  const OPERATOR_KEY_MAP = {
+    '/': 'divide',
+    '*': 'multiply',
+    '+': 'add',
+    '-': 'subtract',
+  };
+  const OTHER_KEY_MAP = {
+    Enter: 'equals',
+    Backspace: 'clear',
+    Delete: 'clear',
+  };
+
   function initialize() {
     view.display(model.input.get());
     view.respondToOrientation();
@@ -410,7 +403,7 @@ const OTHER_KEY_MAP = {
 
   // numbersHandler() called every time user selects a number
   function numbersHandler(e) {
-    const keyTarget = document.querySelector(`#${NUM_KEY_MAP[e.key]}`);
+    const keyTarget = document.querySelector(`#${this.NUM_KEY_MAP[e.key]}`);
     const char = e.key || e.target.dataset.content;
 
     // clearAfterEquals does nothing unless last user selection was '='
@@ -424,7 +417,7 @@ const OTHER_KEY_MAP = {
 
   // operatorsHandler() called every time user selects a mathematical operator
   function operatorsHandler(e) {
-    const keyTarget = document.querySelector(`#${OPERATOR_KEY_MAP[e.key]}`);
+    const keyTarget = document.querySelector(`#${this.OPERATOR_KEY_MAP[e.key]}`);
 
     model.operator.set(e.key || e.target.dataset.operator);
     model.evaluateSubtotal();
@@ -433,7 +426,7 @@ const OTHER_KEY_MAP = {
   }
 
   function equalsHandler(e) {
-    const keyTarget = document.querySelector(`#${OTHER_KEY_MAP[e.key]}`);
+    const keyTarget = document.querySelector(`#${this.OTHER_KEY_MAP[e.key]}`);
 
     model.evaluateSubtotal();
     model.evaluateTotal();
@@ -442,7 +435,7 @@ const OTHER_KEY_MAP = {
   }
 
   function clearHandler(e) {
-    const keyTarget = document.querySelector(`#${OTHER_KEY_MAP[e.key]}`);
+    const keyTarget = document.querySelector(`#${this.OTHER_KEY_MAP[e.key]}`);
 
     model.clear();
     view.display(model.input.get());
@@ -451,9 +444,9 @@ const OTHER_KEY_MAP = {
 
   function setupListeners() {
     window.addEventListener('keydown', (e) => {
-      if (NUM_KEY_MAP.hasOwnProperty(e.key)) {
+      if (this.NUM_KEY_MAP[e.key]) {
         this.numbersHandler(e);
-      } else if (OPERATOR_KEY_MAP.hasOwnProperty(e.key)) {
+      } else if (this.OPERATOR_KEY_MAP[e.key]) {
         this.operatorsHandler(e);
       } else if (e.key === 'Enter') {
         this.equalsHandler(e);
@@ -478,6 +471,9 @@ const OTHER_KEY_MAP = {
   }
 
   window.calculatorMVC.controller = {
+    NUM_KEY_MAP,
+    OPERATOR_KEY_MAP,
+    OTHER_KEY_MAP,
     initialize,
     numbersHandler,
     operatorsHandler,
