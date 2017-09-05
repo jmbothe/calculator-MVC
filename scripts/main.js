@@ -76,15 +76,15 @@ const OTHER_KEY_MAP = {
     if (this.operator.isNotDefined()) {
       return;
     } else if (this.operator.isLowPrecedence()) {
-      this.lowPrecedenceExpression.curry
+      this.lowPrecedenceExpression.partialApply
         .call(this, this.subtotal.get(), this.operator.get());
       this.midPrecedenceExpression.reset();
       this.highPrecedenceExpression.reset();
     } else if (this.operator.isMidPrecedence()) {
-      this.midPrecedenceExpression.curry.call(this, this.subtotal.get());
+      this.midPrecedenceExpression.partialApply.call(this, this.subtotal.get());
       this.highPrecedenceExpression.reset();
     } else if (this.operator.isHighPrecedence()) {
-      this.highPrecedenceExpression.curry.call(this, this.subtotal.get());
+      this.highPrecedenceExpression.partialApply.call(this, this.subtotal.get());
     }
     this.operator.reset();
     this.input.reset();
@@ -273,16 +273,16 @@ const OTHER_KEY_MAP = {
       expression = a => +a;
     }
     /*
-    * curry() stores an operator and an operand which wait until
+    * partialApply() fixes an operator and an operand which wait until
     * a second operand is provided to evaluate the expression.
     *
     * FIX ME: eval() is bad practice
     */
-    function curry(firstValue, operator = defaultOperator) {
+    function partialApply(firstValue, operator = defaultOperator) {
       expression = secondValue =>
         this.round(eval(firstValue + operator + secondValue));
     }
-    return { evaluate, reset, curry };
+    return { evaluate, reset, partialApply };
   }
 
   // App namespace
