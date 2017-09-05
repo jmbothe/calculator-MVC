@@ -4,7 +4,7 @@
 * The model/view/controller software architecture pattern.
 * Principles of clean, DRY, self-documenting code.
 * DOM traversal and manipulation.
-* Responsive design.
+* Mobile-first responsive design.
 * Delicious Vanilla JavaScript (DVJS).
 
 ## Table of Contents
