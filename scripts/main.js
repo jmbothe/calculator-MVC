@@ -456,16 +456,18 @@
     });
 
     document.querySelectorAll('.number').forEach(function listen(item) {
-      item.addEventListener('click', this.numbersHandler);
+      item.addEventListener('click', this.numbersHandler.bind(this));
     }, this);
 
     document.querySelectorAll('.operator').forEach(function listen(item) {
-      item.addEventListener('click', this.operatorsHandler);
+      item.addEventListener('click', this.operatorsHandler.bind(this));
     }, this);
 
-    document.querySelector('#equals').addEventListener('click', this.equalsHandler);
+    document.querySelector('#equals')
+      .addEventListener('click', this.equalsHandler.bind(this));
 
-    document.querySelector('#clear').addEventListener('click', this.clearHandler);
+    document.querySelector('#clear')
+      .addEventListener('click', this.clearHandler.bind(this));
 
     window.addEventListener('resize', view.respondToOrientation.bind(view));
   }
