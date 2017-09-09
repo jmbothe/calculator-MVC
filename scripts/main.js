@@ -333,11 +333,12 @@
       calculator.offsetWidth > (ratio) * calculator.offsetHeight;
 
     if (excedesRatio) {
-      buttonShells.forEach((item) => {
+      // cant use normal forEach() method because not supported by MSEdge
+      Array.prototype.forEach.call(buttonShells, (item) => {
         item.style.paddingTop = paddingAll;
       });
     } else {
-      buttonShells.forEach((item) => {
+      Array.prototype.forEach.call(buttonShells, (item) => {
         if (item.id === 'display-shell') {
           item.style.paddingTop = paddingDisplay;
         } else if (item.id === 'clear-shell') {
@@ -454,12 +455,11 @@
         this.clearHandler(e);
       }
     });
-
-    document.querySelectorAll('.number').forEach(function listen(item) {
+    Array.prototype.forEach.call(document.querySelectorAll('.number'), (item) => {
       item.addEventListener('click', this.numbersHandler.bind(this));
     }, this);
 
-    document.querySelectorAll('.operator').forEach(function listen(item) {
+    Array.prototype.forEach.call(document.querySelectorAll('.operator'), (item) => {
       item.addEventListener('click', this.operatorsHandler.bind(this));
     }, this);
 
