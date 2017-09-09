@@ -1,4 +1,4 @@
-'strict';
+'use strict';
 
 /*
 * MODEL
@@ -20,20 +20,17 @@
   */
   function evaluateSubtotal() {
     if (this.operator.isLowPrecedence()) {
-      this.subtotal.set
-        .call(this, this.lowPrecedenceExpression
-          .evaluate(this.midPrecedenceExpression
-            .evaluate(this.highPrecedenceExpression
-              .evaluate(this.input.get()))));
-    } else if (this.operator.isMidPrecedence()) {
-      this.subtotal.set
-        .call(this, this.midPrecedenceExpression
+      this.subtotal.set(this.lowPrecedenceExpression
+        .evaluate(this.midPrecedenceExpression
           .evaluate(this.highPrecedenceExpression
-            .evaluate(this.input.get())));
+            .evaluate(this.input.get()))));
+    } else if (this.operator.isMidPrecedence()) {
+      this.subtotal.set(this.midPrecedenceExpression
+        .evaluate(this.highPrecedenceExpression
+          .evaluate(this.input.get())));
     } else if (this.operator.isHighPrecedence()) {
-      this.subtotal.set
-        .call(this, this.highPrecedenceExpression
-          .evaluate(this.input.get()));
+      this.subtotal.set(this.highPrecedenceExpression
+        .evaluate(this.input.get()));
     }
   }
 
@@ -47,15 +44,17 @@
     if (this.operator.isNotDefined()) {
       return;
     } else if (this.operator.isLowPrecedence()) {
-      this.lowPrecedenceExpression.partialApply
-        .call(this, this.subtotal.get(), this.operator.get());
+      this.lowPrecedenceExpression
+        .partialApply(this.subtotal.get(), this.operator.get());
       this.midPrecedenceExpression.reset();
       this.highPrecedenceExpression.reset();
     } else if (this.operator.isMidPrecedence()) {
-      this.midPrecedenceExpression.partialApply.call(this, this.subtotal.get());
+      this.midPrecedenceExpression
+        .partialApply(this.subtotal.get());
       this.highPrecedenceExpression.reset();
     } else if (this.operator.isHighPrecedence()) {
-      this.highPrecedenceExpression.partialApply.call(this, this.subtotal.get());
+      this.highPrecedenceExpression
+        .partialApply(this.subtotal.get());
     }
     this.operator.reset();
     this.input.reset();
@@ -124,7 +123,7 @@
       return subtotal;
     }
     function set(number) {
-      subtotal = this.round(number);
+      subtotal = round(number);
     }
     function reset() {
       subtotal = undefined;
@@ -144,26 +143,18 @@
     function reset() {
       input = '0';
     }
-    function addCharEnd(char) {
-      if (this.isNotMaxLength()) input += char;
-    }
-
     // only want the count of numbers, not the entire string length
     function isNotMaxLength() {
       return input.match(/\d/g).length < 9;
     }
-    function changeSign() {
-      input = this.isPositive() ? `-${input}` : input.substring(1);
+    function addCharEnd(char) {
+      if (isNotMaxLength()) input += char;
     }
     function isPositive() {
       return !(/-/.test(input));
     }
-    function trimLeadingZeros() {
-      if (this.hasPositiveLeadingZero() && !this.hasDecimal()) {
-        input = input.substring(1);
-      } else if (this.hasNegativeLeadingZero() && !this.hasDecimal()) {
-        input = `-${input.substring(2)}`;
-      }
+    function changeSign() {
+      input = isPositive() ? `-${input}` : input.substring(1);
     }
     function hasDecimal() {
       return /\./.test(input);
@@ -173,6 +164,13 @@
     }
     function hasNegativeLeadingZero() {
       return /^-0/.test(input) && input.length > 2;
+    }
+    function trimLeadingZeros() {
+      if (hasPositiveLeadingZero() && !hasDecimal()) {
+        input = input.substring(1);
+      } else if (hasNegativeLeadingZero() && !hasDecimal()) {
+        input = `-${input.substring(2)}`;
+      }
     }
     return {
       get,
@@ -224,6 +222,13 @@
     };
   }
 
+  const OPERATORS = {
+    '+': (a, b) => a + b,
+    '-': (a, b) => a - b,
+    '*': (a, b) => a * b,
+    '/': (a, b) => a / b,
+  };
+
   function expressionModule(defaultOperator) {
     // default expression simply returns input value as number
     let expression = a => +a;
@@ -240,17 +245,10 @@
     */
     function partialApply(firstValue, operator = defaultOperator) {
       expression = secondValue =>
-        this.round(this.OPERATORS[operator](firstValue, secondValue));
+        round(OPERATORS[operator](firstValue, secondValue));
     }
     return { evaluate, reset, partialApply };
   }
-
-  const OPERATORS = {
-    '+': (a, b) => a + b,
-    '-': (a, b) => a - b,
-    '*': (a, b) => a * b,
-    '/': (a, b) => a / b,
-  };
 
   // App namespace
   window.calculatorMVC = {};
