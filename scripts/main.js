@@ -389,11 +389,15 @@
     '*': 'multiply',
     '+': 'add',
     '-': 'subtract',
+    Divide: 'divide',
+    Multiply: 'multiply',
+    Add: 'add',
+    Subtract: 'subtract',
   };
   const OTHER_KEY_MAP = {
     Enter: 'equals',
-    Backspace: 'clear',
     Delete: 'clear',
+    Del: 'clear',
   };
 
   function initialize() {
@@ -420,7 +424,7 @@
   function operatorsHandler(e) {
     const keyTarget = document.querySelector(`#${this.OPERATOR_KEY_MAP[e.key]}`);
 
-    model.operator.set(e.key || e.target.dataset.operator);
+    model.operator.set(keyTarget.dataset.operator || e.target.dataset.operator);
     model.evaluateSubtotal();
     view.display(model.subtotal.get());
     view.animateButton(keyTarget || e.target);
@@ -451,7 +455,7 @@
         this.operatorsHandler(e);
       } else if (e.key === 'Enter') {
         this.equalsHandler(e);
-      } else if (e.key === 'Backspace' || e.key === 'Delete') {
+      } else if (this.OTHER_KEY_MAP[e.key] && e.key !== 'Enter') {
         this.clearHandler(e);
       }
     });
