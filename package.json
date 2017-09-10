@@ -1,0 +1,23 @@
+{
+  "name": "calculator-mvc",
+  "version": "1.0.0",
+  "description": "a basic calculator",
+  "main": "index.js",
+  "scripts": {
+    "build": "babel --presets es2015 scripts/main.js -d dist && cp -i index.html dist && cp -i styles/styles.css dist/styles"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jmbothe/calculator-MVC.git"
+  },
+  "author": "jmbothe",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jmbothe/calculator-MVC/issues"
+  },
+  "homepage": "https://github.com/jmbothe/calculator-MVC#readme",
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-es2015": "^6.24.1"
+  }
+}

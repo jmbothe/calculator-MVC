@@ -56,11 +56,11 @@
     this.lowPrecedenceExpression.reset();
     this.midPrecedenceExpression.reset();
     this.highPrecedenceExpression.reset();
-    this.operator.reset();
+    this.operator.set('=');
   }
 
   function clearAfterEquals() {
-    var lastButtonPressedWasEquals = this.subtotal.get() == this.input.get() && this.operator.isNotDefined();
+    var lastButtonPressedWasEquals = this.operator.get() === '=';
 
     if (lastButtonPressedWasEquals) {
       this.input.reset();
@@ -351,12 +351,24 @@
     }, 100);
   }
 
+  function removeButtonOutline() {
+    Array.prototype.forEach.call(document.querySelectorAll('.button'), function (item) {
+      item.classList.remove('outline');
+    });
+  }
+
+  function outlineButton(target) {
+    target.classList.add('outline');
+  }
+
   window.calculatorMVC.view = {
     display: display,
     formatNumber: formatNumber,
     respondToOrientation: respondToOrientation,
     setShellSize: setShellSize,
-    animateButton: animateButton
+    animateButton: animateButton,
+    outlineButton: outlineButton,
+    removeButtonOutline: removeButtonOutline
   };
 })();
 
@@ -400,6 +412,12 @@
     this.setupListeners();
   }
 
+  function viewTasks(display, target) {
+    view.display(display);
+    view.animateButton(target);
+    view.removeButtonOutline();
+  }
+
   // numbersHandler() called every time user selects a number
   function numbersHandler(e) {
     var keyTarget = document.querySelector('#' + this.NUM_KEY_MAP[e.key]);
@@ -410,8 +428,8 @@
     // setVariables() does nothing unless last user selection was an operator
     model.setVariables();
     model.buildInput(char);
-    view.display(model.input.get());
-    view.animateButton(keyTarget || e.target);
+
+    this.viewTasks(model.input.get(), keyTarget || e.target);
   }
 
   // operatorsHandler() called every time user selects a mathematical operator
@@ -421,8 +439,8 @@
     model.operator.set(keyTarget && keyTarget.dataset.operator || e.target.dataset.operator);
 
     model.evaluateSubtotal();
-    view.display(model.subtotal.get());
-    view.animateButton(keyTarget || e.target);
+    this.viewTasks(model.subtotal.get(), keyTarget || e.target);
+    view.outlineButton(keyTarget || e.target);
   }
 
   function equalsHandler(e) {
@@ -430,16 +448,15 @@
 
     model.evaluateSubtotal();
     model.evaluateTotal();
-    view.display(model.input.get());
-    view.animateButton(keyTarget || e.target);
+    this.viewTasks(model.input.get(), keyTarget || e.target);
+    view.outlineButton(keyTarget || e.target);
   }
 
   function clearHandler(e) {
     var keyTarget = document.querySelector('#' + this.OTHER_KEY_MAP[e.key]);
 
     model.clear();
-    view.display(model.input.get());
-    view.animateButton(keyTarget || e.target);
+    this.viewTasks(model.input.get(), keyTarget || e.target);
   }
 
   function setupListeners() {
@@ -476,6 +493,7 @@
     OPERATOR_KEY_MAP: OPERATOR_KEY_MAP,
     OTHER_KEY_MAP: OTHER_KEY_MAP,
     initialize: initialize,
+    viewTasks: viewTasks,
     numbersHandler: numbersHandler,
     operatorsHandler: operatorsHandler,
     equalsHandler: equalsHandler,
