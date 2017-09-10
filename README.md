@@ -21,15 +21,15 @@
 
 ## Demo
 
-[Try it out!](https://jmbothe.github.io/calculator-MVC/)
+[Try it out!](https://jmbothe.github.io/calculator-MVC/dist/)
 
-[![portrait](/assets/portrait.jpg)](https://jmbothe.github.io/calculator-MVC/)
+[![portrait](/assets/portrait.jpg)](https://jmbothe.github.io/calculator-MVC/dist/)
 
 <a name="description"/>
 
 ## Description
 
-This calculator was built for personal edification, and is based on two major influences. On the surface, it is an attempt to reverse engineer the basic functionality of the iOS10 calculator (in portrait view). Under the hood, it is an attempt to follow the rudiments of the MVC design pattern laid out in [the vanilla JS example of the TodoMVC project](http://todomvc.com/examples/vanillajs/).
+This calculator was built for personal edification, and is based on two major influences. On the surface, it is an attempt to reverse engineer the basic functionality of the iOS10 calculator (in portrait view). Under the hood, it is an attempt to follow the rudiments of the MVC design pattern found in [the vanilla JS example of the TodoMVC project](http://todomvc.com/examples/vanillajs/).
 
 #### How is this calculator like the basic iOS calculator?
 * It follows the basic order of operations.
