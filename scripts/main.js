@@ -422,7 +422,7 @@
   function operatorsHandler(e) {
     const keyTarget = document.querySelector(`#${this.OPERATOR_KEY_MAP[e.key]}`);
 
-    model.operator.set(keyTarget.dataset.operator || e.target.dataset.operator);
+    model.operator.set((keyTarget && keyTarget.dataset.operator) || e.target.dataset.operator);
     model.evaluateSubtotal();
     view.display(model.subtotal.get());
     view.animateButton(keyTarget || e.target);
