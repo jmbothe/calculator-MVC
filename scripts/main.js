@@ -420,9 +420,12 @@
 
   // operatorsHandler() called every time user selects a mathematical operator
   function operatorsHandler(e) {
-    const keyTarget = document.querySelector(`#${this.OPERATOR_KEY_MAP[e.key]}`);
+    const keyTarget =
+      document.querySelector(`#${this.OPERATOR_KEY_MAP[e.key]}`);
 
-    model.operator.set((keyTarget && keyTarget.dataset.operator) || e.target.dataset.operator);
+    model.operator.set((keyTarget && keyTarget.dataset.operator)
+      || e.target.dataset.operator);
+
     model.evaluateSubtotal();
     view.display(model.subtotal.get());
     view.animateButton(keyTarget || e.target);
@@ -457,13 +460,15 @@
         this.clearHandler(e);
       }
     });
-    Array.prototype.forEach.call(document.querySelectorAll('.number'), (item) => {
-      item.addEventListener('click', this.numbersHandler.bind(this));
-    }, this);
+    Array.prototype.forEach
+      .call(document.querySelectorAll('.number'), (item) => {
+        item.addEventListener('click', this.numbersHandler.bind(this));
+      }, this);
 
-    Array.prototype.forEach.call(document.querySelectorAll('.operator'), (item) => {
-      item.addEventListener('click', this.operatorsHandler.bind(this));
-    }, this);
+    Array.prototype.forEach
+      .call(document.querySelectorAll('.operator'), (item) => {
+        item.addEventListener('click', this.operatorsHandler.bind(this));
+      }, this);
 
     document.querySelector('#equals')
       .addEventListener('click', this.equalsHandler.bind(this));
