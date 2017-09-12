@@ -23,7 +23,7 @@
 
 [Try it out!](https://jmbothe.github.io/calculator-MVC/dist/)
 
-[![portrait](/assets/portrait.jpg)](https://jmbothe.github.io/calculator-MVC/dist/)
+[![portrait](/assets/example.gif)](https://jmbothe.github.io/calculator-MVC/dist/)
 
 <a name="description"/>
 
