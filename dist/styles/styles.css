@@ -10,7 +10,7 @@ MOBILE FIRST RULES
 }
 
 html {
-  font-size: 11vw;
+  font-size: 11vmin;
   background-color: hsl(65, 50%, 98%)
 }
 
@@ -39,9 +39,10 @@ body {
 
 .button-shell {
   position: relative;
-  width: 100%;
+  width: 25vw;
+  height: 25vw;
   max-width: 16.66vh;
-  padding-top: 100%;
+  max-height: 16.66vh;
   border-radius: 50%;
 }
 
@@ -76,13 +77,11 @@ body {
 #display-shell {
   width: 100%;
   max-width: none;
-  padding-top: 25%;
 }
 
 #clear-shell {
   width: 100%;
   max-width: none;
-  padding-top: 33.33%;
   border-radius: 30px;
 }
 
@@ -103,7 +102,7 @@ body {
   bottom: 10%;
   left: 10%;
   right: 10%;
-  font-size: 9vw;
+  font-size: 9vmin;
   transition: 100ms;
 }
 
@@ -128,16 +127,15 @@ and (max-width: 1024px) {
   }
 
   .button-shell {
+    width: 16.66vw;
+    height: 16.66vw;
     max-width: 25vh;
-  }
-
-  #display-shell {
-    padding-top: 16.66%;
+    max-height: 25vh;
   }
 
   #clear-shell {
+    width: 16.66vw;
     max-width: 25vh;
-    padding-top: 100%;
     border-radius: 50%;
   }
 
@@ -239,20 +237,11 @@ DESKTOP RULES
 @media only screen
 and (min-width: 1025px) {
 
-  html {
-    font-size: 5.5vw;
-  }
-
   body {
     width: 500px;
   }
 
   #display {
-    font-size: 1.05em;
-    letter-spacing: -.05em
-  }
-
-  .animate {
-    font-size: 5vw;
+    font-size: 1.1em;
   }
 }

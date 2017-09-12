@@ -293,55 +293,14 @@
     var string = '' + number;
     var excedesThresholds = Math.abs(+string) > 999999999 || Math.abs(+string) < 0.000001 && Math.abs(+string) > 0;
 
-    if (error) {
-      return 'Error';
-    }
-    return excedesThresholds ?
+    if (error) return 'Error';
 
+    return excedesThresholds ?
     // format for better-looking exponential notation
     ('' + (+string).toExponential(5)).replace(/\.*0*e/, 'e').replace(/\+/, '')
 
     // format to add thousands commas, but not in decimal places, obviously
     : string.split('.')[0].replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,') + (/\./.test(string) && '.' || '') + (string.split('.')[1] || '');
-  }
-
-  function respondToOrientation() {
-    var shouldBeLandscape = window.matchMedia('(orientation: landscape)').matches && window.innerWidth <= 1024;
-
-    // maintains a portrait orientation on wide laptop/desktop screens
-    var shouldBePortrait = window.matchMedia('(orientation: portrait)').matches || window.innerWidth > 1024;
-
-    if (shouldBeLandscape) {
-      this.setShellSize(1.5, '25vh', '16.66%', '100%');
-      document.querySelector('#clear').textContent = 'cl';
-    } else if (shouldBePortrait) {
-      this.setShellSize(0.666, '16.66vh', '25%', '33.33%');
-      document.querySelector('#clear').textContent = 'clear';
-    }
-  }
-
-  // obsessive attempt to maintain circular buttons in a rectangular grid
-  function setShellSize(ratio, paddingAll, paddingDisplay, paddingClear) {
-    var calculator = document.querySelector('.calculator');
-    var buttonShells = document.querySelectorAll('.button-shell');
-    var excedesRatio = calculator.offsetWidth > ratio * calculator.offsetHeight;
-
-    if (excedesRatio) {
-      // cant use normal forEach() method because not supported by MSEdge
-      Array.prototype.forEach.call(buttonShells, function (item) {
-        item.style.paddingTop = paddingAll;
-      });
-    } else {
-      Array.prototype.forEach.call(buttonShells, function (item) {
-        if (item.id === 'display-shell') {
-          item.style.paddingTop = paddingDisplay;
-        } else if (item.id === 'clear-shell') {
-          item.style.paddingTop = paddingClear;
-        } else {
-          item.style.paddingTop = '100%';
-        }
-      });
-    }
   }
 
   function animateButton(target) {
@@ -351,21 +310,19 @@
     }, 100);
   }
 
+  function outlineButton(target) {
+    target.classList.add('outline');
+  }
+
   function removeButtonOutline() {
     Array.prototype.forEach.call(document.querySelectorAll('.button'), function (item) {
       item.classList.remove('outline');
     });
   }
 
-  function outlineButton(target) {
-    target.classList.add('outline');
-  }
-
   window.calculatorMVC.view = {
     display: display,
     formatNumber: formatNumber,
-    respondToOrientation: respondToOrientation,
-    setShellSize: setShellSize,
     animateButton: animateButton,
     outlineButton: outlineButton,
     removeButtonOutline: removeButtonOutline
@@ -408,7 +365,6 @@
 
   function initialize() {
     view.display(model.input.get());
-    view.respondToOrientation();
     this.setupListeners();
   }
 
@@ -484,8 +440,6 @@
     document.querySelector('#equals').addEventListener('click', this.equalsHandler.bind(this));
 
     document.querySelector('#clear').addEventListener('click', this.clearHandler.bind(this));
-
-    window.addEventListener('resize', view.respondToOrientation.bind(view));
   }
 
   window.calculatorMVC.controller = {
